@@ -1,0 +1,608 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+# Load necessary libraries
+library(vegan)
+
+# Load the metadata and Bray-Curtis distance matrix
+metadata <- read.csv("metadata_rarefaction.csv", header = TRUE, row.names = 1)
+bray_curtis <- read.csv("average_bray_curtis.csv", header = TRUE, row.names = 1)
+
+# Convert the Bray-Curtis distance matrix to a distance object
+bray_curtis_dist <- as.dist(bray_curtis)
+
+# Perform PERMANOVA (adonis2) with 10,000 permutations
+permanova_result <- adonis2(bray_curtis_dist ~ Group, data = metadata, permutations = 10000)
+
+# Print the results
+print(permanova_result)
+
+```
+
+```{r}
+# Load necessary libraries
+library(vegan)
+
+# Load the metadata and Bray-Curtis distance matrix
+metadata <- read.csv("metadata_rarefaction.csv", header = TRUE, row.names = 1)
+bray_curtis <- read.csv("average_bray_curtis.csv", header = TRUE, row.names = 1)
+
+# Convert the Bray-Curtis distance matrix to a distance object
+bray_curtis_dist <- as.dist(bray_curtis)
+
+# Run PERMANOVA for each variable independently
+permanova_age <- adonis2(bray_curtis_dist ~ Age, data = metadata, permutations = 10000)
+permanova_epigenetic <- adonis2(bray_curtis_dist ~ Epigenetic_deviation, data = metadata, permutations = 10000)
+permanova_bmi <- adonis2(bray_curtis_dist ~ BMI, data = metadata, permutations = 10000)
+permanova_group <- adonis2(bray_curtis_dist ~ Group, data = metadata, permutations = 10000)
+permanova_race <- adonis2(bray_curtis_dist ~ Race, data = metadata, permutations = 10000)
+permanova_sex <- adonis2(bray_curtis_dist ~ Sex, data = metadata, permutations = 10000)
+permanova_smoking <- adonis2(bray_curtis_dist ~ Smoking, data = metadata, permutations = 10000)
+
+# Print the results
+print("PERMANOVA Result for Age")
+print(permanova_age)
+
+print("PERMANOVA Result for Epigenetic Deviation")
+print(permanova_epigenetic)
+
+print("PERMANOVA Result for BMI")
+print(permanova_bmi)
+
+print("PERMANOVA Result for Group")
+print(permanova_group)
+
+print("PERMANOVA Result for Race")
+print(permanova_race)
+
+print("PERMANOVA Result for Sex")
+print(permanova_sex)
+
+print("PERMANOVA Result for Smoking")
+print(permanova_smoking)
+
+
+```
+
+
+
+```{r}
+# Convert the Bray-Curtis distance matrix to a distance object
+bray_curtis_dist <- as.dist(bray_curtis)
+
+# Perform PERMANOVA with 10,000 permutations, controlling for Sex
+permanova_result <- adonis2(bray_curtis_dist ~ Group + Sex, data = metadata, by = "margin", permutations = 10000)
+
+# Print the results
+print(permanova_result)
+
+```
+
+```{r}
+# Robust Aitchisons Distance
+
+# Load the distance matrix
+distance_matrix <- read.csv("mDNA/ASV_based/without_rarefaction/distance_matrix.csv", header = TRUE)
+
+# Convert the distance matrix to a distance object
+distance_matrix_dist <- as.dist(as.matrix(distance_matrix))
+
+# Load the Group variable from your separate DataFrame
+group_df <- read.csv("../Linux/cleaned_asv_df.csv")
+
+# Perform PERMANOVA with 10,000 permutations using Group
+permanova_result <- adonis2(distance_matrix_dist ~ Group, data = group_df, by = "term", permutations = 10000)
+
+# Print the results
+print(permanova_result)
+
+```
+
+```{r}
+# Load the phylogenetic distance matrix (TSV file)
+distance_matrix <- read.csv("mDNA/Phylogeny_ASV_based/phylo_rpca_results/distance-matrix.tsv", sep = "\t", header = TRUE, row.names = 1)
+
+# Convert the distance matrix to a distance object
+distance_matrix_dist <- as.dist(as.matrix(distance_matrix))
+
+# Perform PERMANOVA with 10,000 permutations using Group
+permanova_result <- adonis2(distance_matrix_dist ~ Group, data = group_df, permutations = 10000)
+
+# Print the results
+print(permanova_result)
+
+```
+
+
+
+
+```{r}
+# Load necessary libraries
+library(vegan)
+library(openxlsx)
+
+# Create a list to store all PERMANOVA results
+permanova_results <- list()
+
+# --- First PERMANOVA test ---
+# Load the metadata and Bray-Curtis distance matrix
+metadata <- read.csv("metadata_rarefaction.csv", header = TRUE, row.names = 1)
+bray_curtis <- read.csv("average_bray_curtis.csv", header = TRUE, row.names = 1)
+bray_curtis_dist <- as.dist(bray_curtis)
+
+# Run the PERMANOVA for Group
+permanova_result <- adonis2(bray_curtis_dist ~ Group, data = metadata, permutations = 10000)
+permanova_results[["Bray-Curtis - Group"]] <- permanova_result
+
+# --- PERMANOVA for each variable independently ---
+permanova_results[["Bray-Curtis - Age"]] <- adonis2(bray_curtis_dist ~ Age, data = metadata, permutations = 10000)
+permanova_results[["Bray-Curtis - mDNA Dev."]] <- adonis2(bray_curtis_dist ~ Epigenetic_deviation, data = metadata, permutations = 10000)
+permanova_results[["Bray-Curtis - BMI"]] <- adonis2(bray_curtis_dist ~ BMI, data = metadata, permutations = 10000)
+permanova_results[["Bray-Curtis - Race"]] <- adonis2(bray_curtis_dist ~ Race, data = metadata, permutations = 10000)
+permanova_results[["Bray-Curtis - Sex"]] <- adonis2(bray_curtis_dist ~ Sex, data = metadata, permutations = 10000)
+permanova_results[["Bray-Curtis - Smoking"]] <- adonis2(bray_curtis_dist ~ Smoking, data = metadata, permutations = 10000)
+
+# --- PERMANOVA controlling for Sex ---
+permanova_results[["Bray-Curtis - Group + Sex"]] <- adonis2(bray_curtis_dist ~ Group + Sex, data = metadata, by = "margin", permutations = 10000)
+
+# --- Robust Aitchison Distance ---
+distance_matrix <- read.csv("mDNA/ASV_based/without_rarefaction/distance_matrix.csv", header = TRUE)
+distance_matrix_dist <- as.dist(as.matrix(distance_matrix))
+group_df <- read.csv("../Linux/cleaned_asv_df.csv")
+permanova_results[["Aitchison - Group"]] <- adonis2(distance_matrix_dist ~ Group, data = group_df, by = "term", permutations = 10000)
+
+# --- Phylogenetic Distance Matrix ---
+distance_matrix <- read.csv("mDNA/Phylogeny_ASV_based/phylo_rpca_results/distance-matrix.tsv", sep = "\t", header = TRUE, row.names = 1)
+distance_matrix_dist <- as.dist(as.matrix(distance_matrix))
+permanova_results[["Phylogenetic - Group"]] <- adonis2(distance_matrix_dist ~ Group, data = group_df, permutations = 10000)
+
+# --- Export results to Excel ---
+# Create a new workbook
+wb <- createWorkbook()
+
+# Add each PERMANOVA result to a separate sheet
+for (test_name in names(permanova_results)) {
+  addWorksheet(wb, test_name)
+  writeData(wb, test_name, as.data.frame(permanova_results[[test_name]]))
+}
+
+# Save the workbook
+saveWorkbook(wb, "PERMANOVA_Results.xlsx", overwrite = TRUE)
+
+# Print confirmation message
+cat("All PERMANOVA results have been saved to 'PERMANOVA_Results.xlsx'.\n")
+
+```
+
+
+
+
+```{r}
+metas_all <- read.csv("../Metadata.csv", header = TRUE)
+
+# --- Robust Aitchison Distance ---
+# Load the Aitchison distance matrix
+aitchison_distance_matrix <- read.csv("mDNA/ASV_based/without_rarefaction/distance_matrix.csv", header = TRUE)
+
+# Convert the Aitchison distance matrix to a distance object
+aitchison_distance_matrix_dist <- as.dist(as.matrix(aitchison_distance_matrix))
+
+# Run PERMANOVA for each variable using the Aitchison distance matrix
+aitchison_permanova_results <- list()
+
+aitchison_permanova_results[["Aitchison - phy_perf_sppbs_total_score_consolidated"]] <- adonis2(
+  aitchison_distance_matrix_dist ~ phy_perf_sppbs_total_score_consolidated,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+aitchison_permanova_results[["Aitchison - cog_mmse_totalscore"]] <- adonis2(
+  aitchison_distance_matrix_dist ~ cog_mmse_totalscore,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+aitchison_permanova_results[["Aitchison - func_stat_badl_total"]] <- adonis2(
+  aitchison_distance_matrix_dist ~ func_stat_badl_total,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+aitchison_permanova_results[["Aitchison - func_stat_iadl_score"]] <- adonis2(
+  aitchison_distance_matrix_dist ~ func_stat_iadl_score,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+# Print the Aitchison PERMANOVA results
+print("Aitchison PERMANOVA Results")
+print(aitchison_permanova_results)
+
+
+# --- Phylogenetic Distance Matrix ---
+# Load the Phylogenetic distance matrix
+phylogenetic_distance_matrix <- read.csv("mDNA/Phylogeny_ASV_based/phylo_rpca_results/distance-matrix.tsv", sep = "\t", header = TRUE, row.names = 1)
+
+# Convert the Phylogenetic distance matrix to a distance object
+phylogenetic_distance_matrix_dist <- as.dist(as.matrix(phylogenetic_distance_matrix))
+
+# Run PERMANOVA for each variable using the Phylogenetic distance matrix
+phylogenetic_permanova_results <- list()
+
+phylogenetic_permanova_results[["Phylogenetic - phy_perf_sppbs_total_score_consolidated"]] <- adonis2(
+  phylogenetic_distance_matrix_dist ~ phy_perf_sppbs_total_score_consolidated,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+phylogenetic_permanova_results[["Phylogenetic - cog_mmse_totalscore"]] <- adonis2(
+  phylogenetic_distance_matrix_dist ~ cog_mmse_totalscore,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+phylogenetic_permanova_results[["Phylogenetic - func_stat_badl_total"]] <- adonis2(
+  phylogenetic_distance_matrix_dist ~ func_stat_badl_total,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+phylogenetic_permanova_results[["Phylogenetic - func_stat_iadl_score"]] <- adonis2(
+  phylogenetic_distance_matrix_dist ~ func_stat_iadl_score,
+  data = metas_all, by = "term", permutations = 10000
+)
+
+# Print the Phylogenetic PERMANOVA results
+print("Phylogenetic PERMANOVA Results")
+print(phylogenetic_permanova_results)
+
+```
+
+```{r}
+# --- Aitchison Distance Matrix (Conditioned on Sex) ---
+# BADL (conditioned on Sex_1_0)
+aitchison_permanova_results[["Aitchison - func_stat_badl_total (Controlled for Sex)"]] <- adonis2(
+  aitchison_distance_matrix_dist ~ func_stat_badl_total + Sex_1_0,
+  data = metas_all, by = "margin", permutations = 10000
+)
+
+# IADL (conditioned on Sex_1_0)
+aitchison_permanova_results[["Aitchison - func_stat_iadl_score (Controlled for Sex)"]] <- adonis2(
+  aitchison_distance_matrix_dist ~ func_stat_iadl_score + Sex_1_0,
+  data = metas_all, by = "margin", permutations = 10000
+)
+
+# Print the updated Aitchison PERMANOVA results
+print("Aitchison PERMANOVA Results (Controlled for Sex)")
+print(aitchison_permanova_results[["Aitchison - func_stat_badl_total (Controlled for Sex)"]])
+print(aitchison_permanova_results[["Aitchison - func_stat_iadl_score (Controlled for Sex)"]])
+
+
+# --- Phylogenetic Distance Matrix (Conditioned on Sex) ---
+# BADL (conditioned on Sex_1_0)
+phylogenetic_permanova_results[["Phylogenetic - func_stat_badl_total (Controlled for Sex)"]] <- adonis2(
+  phylogenetic_distance_matrix_dist ~ func_stat_badl_total + Sex_1_0,
+  data = metas_all, by = "margin", permutations = 10000
+)
+
+# Print the updated Phylogenetic PERMANOVA results
+print("Phylogenetic PERMANOVA Results (Controlled for Sex)")
+print(phylogenetic_permanova_results[["Phylogenetic - func_stat_badl_total (Controlled for Sex)"]])
+
+```
+
+
+```{r}
+# --- Robust Aitchison Distance Matrix ---
+# Subset metas_all to include only complete cases for BADL analysis
+badl_complete_cases <- metas_all[complete.cases(metas_all$func_stat_badl_total, metas_all$time_diff_v1_bio, metas_all$PC5, metas_all$PC9), ]
+
+# Convert rownames to numeric
+adjusted_indices <- as.numeric(rownames(badl_complete_cases))
+
+# Subset the Aitchison distance matrix to match the complete cases
+aitchison_dist_subset <- as.matrix(aitchison_distance_matrix_dist)[adjusted_indices, adjusted_indices]
+
+# Convert the subsetted matrix back to a dist object
+aitchison_dist_subset <- as.dist(aitchison_dist_subset)
+
+# Perform PERMANOVA for BADL with Aitchison distance, controlling for time and interactions
+aitchison_permanova_badl <- adonis2(
+  aitchison_dist_subset ~ func_stat_badl_total + time_diff_v1_bio + time_diff_v1_bio:PC5 + time_diff_v1_bio:PC9,
+  data = badl_complete_cases, by = "margin", permutations = 10000
+)
+
+# Print the Aitchison PERMANOVA results
+print("Aitchison PERMANOVA Result for BADL with Interaction Effects")
+print(aitchison_permanova_badl)
+
+# --- Phylogenetic Distance Matrix ---
+# Convert the Phylogenetic distance matrix to a matrix
+phylogenetic_distance_matrix_dist <- as.dist(as.matrix(phylogenetic_distance_matrix))
+
+# Subset the Phylogenetic distance matrix to match the complete cases
+phylogenetic_dist_subset <- as.matrix(phylogenetic_distance_matrix_dist)[adjusted_indices, adjusted_indices]
+
+# Convert the subsetted matrix back to a dist object
+phylogenetic_dist_subset <- as.dist(phylogenetic_dist_subset)
+
+# Perform PERMANOVA for BADL with Phylogenetic distance, controlling for time and interactions
+phylogenetic_permanova_badl <- adonis2(
+  phylogenetic_dist_subset ~ func_stat_badl_total + time_diff_v1_bio + time_diff_v1_bio:PC5 + time_diff_v1_bio:PC9,
+  data = badl_complete_cases, by = "margin", permutations = 10000
+)
+
+# Print the Phylogenetic PERMANOVA results
+print("Phylogenetic PERMANOVA Result for BADL with Interaction Effects")
+print(phylogenetic_permanova_badl)
+
+
+```
+
+
+
+
+```{r}
+new_metas <- read.csv("rarefaction_new_metas.csv", header = TRUE)
+
+# Run PERMANOVA for each variable independently
+permanova_sppb <- adonis2(bray_curtis_dist ~ phy_perf_sppbs_total_score_consolidated, data = new_metas, permutations = 10000)
+permanova_sppb_controlled <- adonis2(bray_curtis_dist ~ phy_perf_sppbs_total_score_consolidated + Sex_1_0, data = new_metas, by = 'margin', permutations = 10000)
+
+permanova_mmse <- adonis2(bray_curtis_dist ~ cog_mmse_totalscore, data = new_metas, permutations = 10000)
+
+permanova_badl <- adonis2(bray_curtis_dist ~ func_stat_badl_total, data = new_metas, permutations = 10000)
+permanova_badl_controlled <- adonis2(bray_curtis_dist ~ func_stat_badl_total + Sex_1_0, by = 'margin', data = new_metas, permutations = 10000)
+
+permanova_iadl <- adonis2(bray_curtis_dist ~ func_stat_iadl_score, data = new_metas, permutations = 10000)
+permanova_iadl_controlled <- adonis2(bray_curtis_dist ~ func_stat_iadl_score + Sex_1_0, by = 'margin', data = new_metas, permutations = 10000)
+
+
+# Print the results
+print("PERMANOVA Result for Phys Performance")
+print(permanova_sppb)
+
+print("PERMANOVA Result for Phys Performance")
+print(permanova_sppb_controlled)
+
+print("PERMANOVA Result for MMSE")
+print(permanova_mmse)
+
+print("PERMANOVA Result for BADL")
+print(permanova_badl)
+
+print("PERMANOVA Result for BADL")
+print(permanova_badl_controlled)
+
+print("PERMANOVA Result for IADL")
+print(permanova_iadl)
+
+print("PERMANOVA Result for IADL")
+print(permanova_iadl_controlled)
+
+
+```
+
+
+
+
+```{r}
+# Convert the distance object to a matrix for subsetting
+bray_curtis_matrix <- as.matrix(bray_curtis_dist)
+
+# Subset new_metas to include only complete cases for BADL analysis
+badl_complete_cases <- new_metas[complete.cases(new_metas$func_stat_badl_total, new_metas$time_diff_v1_bio, new_metas$PC5, new_metas$PC9), ]
+
+# Subset the distance matrix to match the complete cases
+badl_dist_subset <- bray_curtis_matrix[rownames(badl_complete_cases), rownames(badl_complete_cases)]
+
+# Convert the subsetted matrix back to a dist object
+badl_dist_subset <- as.dist(badl_dist_subset)
+
+# Perform PERMANOVA for BADL, controlling for time_diff_v1_bio and testing the interaction effects of PC5 and PC9
+permanova_badl <- adonis2(
+  badl_dist_subset ~ func_stat_badl_total + Sex_1_0 + time_diff_v1_bio + time_diff_v1_bio:PC5 + time_diff_v1_bio:PC9,
+  data = badl_complete_cases, by = 'margin',
+  permutations = 10000
+)
+
+
+# Print the BADL PERMANOVA results
+print("PERMANOVA Result for BADL (Complete Cases)")
+print(permanova_badl)
+
+
+# Subset new_metas to include only complete cases for SPPB analysis
+sppb_complete_cases <- new_metas[complete.cases(new_metas$phy_perf_sppbs_total_score_consolidated, new_metas$time_diff_v5_bio, new_metas$PC6, new_metas$PC7, new_metas$PC10), ]
+
+# Subset the distance matrix to match the complete cases
+sppb_dist_subset <- bray_curtis_matrix[rownames(sppb_complete_cases), rownames(sppb_complete_cases)]
+
+# Convert the subsetted matrix back to a dist object
+sppb_dist_subset <- as.dist(sppb_dist_subset)
+
+# Perform PERMANOVA for SPPB, testing the interaction effects of PC2, PC6, PC7, and PC10
+permanova_sppb <- adonis2(
+  sppb_dist_subset ~ phy_perf_sppbs_total_score_consolidated + Sex_1_0 + time_diff_v5_bio + time_diff_v1_bio:PC2 + time_diff_v1_bio:PC6 + time_diff_v1_bio:PC7 + time_diff_v1_bio:PC10,
+  data = sppb_complete_cases, by = 'margin',
+  permutations = 10000
+)
+
+# Print the SPPB PERMANOVA results
+print("PERMANOVA Result for SPPB (Complete Cases)")
+print(permanova_sppb)
+
+
+```
+
+
+```{r}
+# Load necessary libraries
+library(vegan)
+library(openxlsx)
+
+# Create lists to store PERMANOVA results
+bray_curtis_results <- list()
+aitchison_results <- list()
+phylogenetic_results <- list()
+
+# --- Load metadata ---
+metas_all <- read.csv("../Metadata.csv", header = TRUE)
+new_metas <- read.csv("rarefaction_new_metas.csv", header = TRUE)
+
+# --- Load distance matrices ---
+bray_curtis <- read.csv("average_bray_curtis.csv", header = TRUE, row.names = 1)
+bray_curtis_dist <- as.dist(bray_curtis)
+
+aitchison_distance_matrix <- read.csv("mDNA/ASV_based/without_rarefaction/distance_matrix.csv", header = TRUE)
+aitchison_distance_matrix_dist <- as.dist(as.matrix(aitchison_distance_matrix))
+
+phylogenetic_distance_matrix <- read.csv("mDNA/Phylogeny_ASV_based/phylo_rpca_results/distance-matrix.tsv", sep = "\t", header = TRUE, row.names = 1)
+phylogenetic_distance_matrix_dist <- as.dist(as.matrix(phylogenetic_distance_matrix))
+
+# --- Perform Bray-Curtis PERMANOVA ---
+# Uncontrolled models
+metadata <- read.csv("metadata_rarefaction.csv", header = TRUE, row.names = 1)
+bray_curtis_results[["Bray-Curtis - Age"]] <- adonis2(bray_curtis_dist ~ Age, data = metadata, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - mAge Dev."]] <- adonis2(bray_curtis_dist ~ Epigenetic_deviation, data = metadata, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - mAge Group"]] <- adonis2(bray_curtis_dist ~ Group, data = new_metas, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - BMI"]] <- adonis2(bray_curtis_dist ~ BMI, data = metadata, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - Race"]] <- adonis2(bray_curtis_dist ~ Race, data = metadata, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - Sex"]] <- adonis2(bray_curtis_dist ~ Sex, data = metadata, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - Smoking"]] <- adonis2(bray_curtis_dist ~ Smoking, data = metadata, permutations = 10000)
+
+bray_curtis_results[["Bray-Curtis - SPPB"]] <- adonis2(bray_curtis_dist ~ phy_perf_sppbs_total_score_consolidated, data = new_metas, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - MMSE"]] <- adonis2(bray_curtis_dist ~ cog_mmse_totalscore, data = new_metas, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - BADL"]] <- adonis2(bray_curtis_dist ~ func_stat_badl_total, data = new_metas, permutations = 10000)
+bray_curtis_results[["Bray-Curtis - IADL"]] <- adonis2(bray_curtis_dist ~ func_stat_iadl_score, data = new_metas, permutations = 10000)
+
+
+
+# Controlled models
+# Convert the distance object to a matrix for subsetting
+bray_curtis_matrix <- as.matrix(bray_curtis_dist)
+
+# Subset new_metas to include only complete cases for BADL analysis
+badl_complete_cases <- new_metas[complete.cases(new_metas$func_stat_badl_total, new_metas$time_diff_v1_bio, new_metas$PC5, new_metas$PC9), ]
+
+# Subset the distance matrix to match the complete cases
+badl_dist_subset <- bray_curtis_matrix[rownames(badl_complete_cases), rownames(badl_complete_cases)]
+
+# Convert the subsetted matrix back to a dist object
+badl_dist_subset <- as.dist(badl_dist_subset)
+
+bray_curtis_results[["Bray-Curtis - mAge Group Controlled"]] <- adonis2(bray_curtis_dist ~ Group + Sex, data = metadata, by = "margin", permutations = 10000)
+bray_curtis_results[["Bray-Curtis - SPPB Controlled"]] <- adonis2(sppb_dist_subset ~ phy_perf_sppbs_total_score_consolidated + Sex_1_0 + time_diff_v5_bio + time_diff_v5_bio:PC2 + time_diff_v5_bio:PC6 + time_diff_v5_bio:PC7 + time_diff_v5_bio:PC10, data = badl_complete_cases, by = "margin", permutations = 10000)
+bray_curtis_results[["Bray-Curtis - BADL Controlled"]] <- adonis2(badl_dist_subset ~ func_stat_badl_total + Sex_1_0 + time_diff_v1_bio + time_diff_v1_bio:PC5 + time_diff_v1_bio:PC9, data = badl_complete_cases, by = "margin", permutations = 10000)
+bray_curtis_results[["Bray-Curtis - IADL Controlled"]] <- adonis2(bray_curtis_dist ~ func_stat_iadl_score + Sex_1_0, data = new_metas, by = "margin", permutations = 10000)
+
+
+
+# --- Perform Aitchison PERMANOVA ---
+
+
+# Uncontrolled models
+aitchison_results[["Aitchison - mAge Group"]] <- adonis2(aitchison_distance_matrix_dist ~ Group, data = metas_all, permutations = 10000)
+aitchison_results[["Aitchison - SPPB"]] <- adonis2(aitchison_distance_matrix_dist ~ phy_perf_sppbs_total_score_consolidated, data = metas_all, permutations = 10000)
+aitchison_results[["Aitchison - MMSE"]] <- adonis2(aitchison_distance_matrix_dist ~ cog_mmse_totalscore, data = metas_all, permutations = 10000)
+aitchison_results[["Aitchison - BADL"]] <- adonis2(aitchison_distance_matrix_dist ~ func_stat_badl_total, data = metas_all, permutations = 10000)
+aitchison_results[["Aitchison - IADL"]] <- adonis2(aitchison_distance_matrix_dist ~ func_stat_iadl_score, data = metas_all, permutations = 10000)
+
+# Controlled models
+# Subset metas_all to include only complete cases for BADL analysis
+badl_complete_cases <- metas_all[complete.cases(metas_all$func_stat_badl_total, metas_all$time_diff_v1_bio, metas_all$PC5, metas_all$PC9), ]
+
+# Convert rownames to numeric
+adjusted_indices <- as.numeric(rownames(badl_complete_cases))
+
+# Subset the Aitchison distance matrix to match the complete cases
+aitchison_dist_subset <- as.matrix(aitchison_distance_matrix_dist)[adjusted_indices, adjusted_indices]
+
+# Convert the subsetted matrix back to a dist object
+aitchison_dist_subset <- as.dist(aitchison_dist_subset)
+
+
+aitchison_results[["Aitchison - BADL Controlled"]] <- adonis2(aitchison_dist_subset ~ func_stat_badl_total + time_diff_v1_bio + time_diff_v1_bio:PC5 + time_diff_v1_bio:PC9, data = badl_complete_cases, by = "margin", permutations = 10000)
+aitchison_results[["Aitchison - IADL Controlled"]] <- adonis2(aitchison_distance_matrix_dist ~ func_stat_iadl_score + Sex_1_0, data = metas_all, by = "margin", permutations = 10000)
+
+
+
+# --- Perform Phylogenetic PERMANOVA ---
+# Uncontrolled models
+phylogenetic_results[["Phylogenetic - mAge Group"]] <- adonis2(phylogenetic_distance_matrix_dist ~ Group, data = metas_all, permutations = 10000)
+phylogenetic_results[["Phylogenetic - SPPB"]] <- adonis2(phylogenetic_distance_matrix_dist ~ phy_perf_sppbs_total_score_consolidated, data = metas_all, permutations = 10000)
+phylogenetic_results[["Phylogenetic - MMSE"]] <- adonis2(phylogenetic_distance_matrix_dist ~ cog_mmse_totalscore, data = metas_all, permutations = 10000)
+phylogenetic_results[["Phylogenetic - BADL"]] <- adonis2(phylogenetic_distance_matrix_dist ~ func_stat_badl_total, data = metas_all, permutations = 10000)
+phylogenetic_results[["Phylogenetic - IADL"]] <- adonis2(phylogenetic_distance_matrix_dist ~ func_stat_iadl_score, data = metas_all, permutations = 10000)
+
+
+# Controlled models
+phylogenetic_distance_matrix_dist <- as.dist(as.matrix(phylogenetic_distance_matrix))
+
+# Subset the Phylogenetic distance matrix to match the complete cases
+phylogenetic_dist_subset <- as.matrix(phylogenetic_distance_matrix_dist)[adjusted_indices, adjusted_indices]
+
+# Convert the subsetted matrix back to a dist object
+phylogenetic_dist_subset <- as.dist(phylogenetic_dist_subset)
+
+phylogenetic_results[["Phylogenetic - BADL Controlled"]] <- adonis2(phylogenetic_dist_subset ~ func_stat_badl_total + time_diff_v1_bio + time_diff_v1_bio:PC5 + time_diff_v1_bio:PC9, data = badl_complete_cases, by = "margin", permutations = 10000)
+
+# --- Export results to Excel ---
+
+# Load necessary libraries
+library(vegan)
+library(openxlsx)
+
+# Create a new workbook
+wb <- createWorkbook()
+
+# Function to add a PERMANOVA result to the workbook with row labels and empty row between models
+add_permanova_result <- function(wb, sheet_name, test_name, permanova_result) {
+  # Check if the sheet already exists
+  if (!(sheet_name %in% names(wb))) {
+    addWorksheet(wb, sheet_name)
+    current_row <- 1
+  } else {
+    # Find the next empty row in the sheet
+    current_row <- nrow(read.xlsx(wb, sheet = sheet_name, colNames = FALSE)) + 2
+  }
+  
+  # Add the model name
+  writeData(wb, sheet_name, test_name, startRow = current_row, startCol = 1)
+  
+  # Convert the PERMANOVA result to a data frame and add row labels
+  result_df <- as.data.frame(permanova_result)
+  result_df <- cbind(Term = rownames(result_df), result_df)  # Add row labels as a new column
+  
+  # Write the result below the model name
+  writeData(wb, sheet_name, result_df, startRow = current_row + 1, startCol = 1)
+  
+  # Leave an empty row between models
+  writeData(wb, sheet_name, "", startRow = current_row + nrow(result_df) + 2, startCol = 1)
+}
+
+# --- Export Bray-Curtis Results ---
+for (test_name in names(bray_curtis_results)) {
+  sheet_name <- if (grepl("Controlled", test_name)) "Bray-Curtis - Controlled" else "Bray-Curtis"
+  add_permanova_result(wb, sheet_name, test_name, bray_curtis_results[[test_name]])
+}
+
+# --- Export Aitchison Results ---
+for (test_name in names(aitchison_results)) {
+  sheet_name <- if (grepl("Controlled", test_name)) "Aitchison - Controlled" else "Aitchison"
+  add_permanova_result(wb, sheet_name, test_name, aitchison_results[[test_name]])
+}
+
+# --- Export Phylogenetic Results ---
+for (test_name in names(phylogenetic_results)) {
+  sheet_name <- if (grepl("Controlled", test_name)) "Phylogenetic - Controlled" else "Phylogenetic"
+  add_permanova_result(wb, sheet_name, test_name, phylogenetic_results[[test_name]])
+}
+
+# Save the workbook
+saveWorkbook(wb, "PERMANOVA_Final_Results.xlsx", overwrite = TRUE)
+
+# Print confirmation message
+cat("All PERMANOVA results have been saved to 'PERMANOVA_Final_Results_Labeled.xlsx'.\n")
+
+
+```
+
+
