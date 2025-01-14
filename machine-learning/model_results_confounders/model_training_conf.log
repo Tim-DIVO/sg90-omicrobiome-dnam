@@ -1,0 +1,10 @@
+2024-11-11 11:04:58,235 - INFO - Completed outer fold 1
+2024-11-11 11:04:58,235 - INFO - Fold Time: 25.54 seconds
+2024-11-11 11:05:24,043 - INFO - Completed outer fold 2
+2024-11-11 11:05:24,043 - INFO - Fold Time: 25.81 seconds
+2024-11-11 11:05:46,946 - INFO - Completed outer fold 3
+2024-11-11 11:05:46,946 - INFO - Fold Time: 22.90 seconds
+2024-11-11 11:06:15,692 - INFO - Completed outer fold 4
+2024-11-11 11:06:15,692 - INFO - Fold Time: 28.75 seconds
+2024-11-11 11:06:46,389 - INFO - Completed outer fold 5
+2024-11-11 11:06:46,389 - INFO - Fold Time: 30.70 seconds

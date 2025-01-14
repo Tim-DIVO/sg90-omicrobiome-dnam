@@ -1,0 +1,1 @@
+{"model_type": "RandomForest", "outer_fold": 1, "accuracy": 0.6666666666666666, "precision": 0.6670026881720429, "recall": 0.6666666666666666, "f1_score": 0.6666666666666666, "roc_auc": 0.6844758064516129, "log_loss": 0.6481264388606393}

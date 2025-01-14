@@ -1,0 +1,234 @@
+2024-10-09 11:09:48,907 - ERROR - Error loading data:, Error: {str(e)}
+Traceback (most recent call last):
+  File "c:\Users\MEDV3721\Documents\Python Scripts\model.py", line 53, in <module>
+    df = pd.read_csv("ML_Data/FINAL_GENUS_TAXA_CLR.csv")
+  File "C:\Users\MEDV3721\anaconda3\envs\SG90\lib\site-packages\pandas\io\parsers\readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "C:\Users\MEDV3721\anaconda3\envs\SG90\lib\site-packages\pandas\io\parsers\readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "C:\Users\MEDV3721\anaconda3\envs\SG90\lib\site-packages\pandas\io\parsers\readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+  File "C:\Users\MEDV3721\anaconda3\envs\SG90\lib\site-packages\pandas\io\parsers\readers.py", line 1880, in _make_engine
+    self.handles = get_handle(
+  File "C:\Users\MEDV3721\anaconda3\envs\SG90\lib\site-packages\pandas\io\common.py", line 873, in get_handle
+    handle = open(
+FileNotFoundError: [Errno 2] No such file or directory: 'ML_Data/FINAL_GENUS_TAXA_CLR.csv'
+2024-10-09 11:10:08,963 - INFO - After loading data: Memory usage: 0.15 GB | Virtual memory: 0.12 GB
+2024-10-09 11:10:08,977 - INFO - Start of outer fold 1: Memory usage: 0.15 GB | Virtual memory: 0.12 GB
+2024-10-09 11:10:29,914 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.15 GB | Virtual memory: 0.13 GB
+2024-10-09 11:10:30,378 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:10:30,378 - INFO - Completed fs_method: None, model_type: RandomForest, outer_fold: 1
+2024-10-09 11:10:30,378 - INFO - Fold Time: 21.40 seconds
+2024-10-09 11:10:30,378 - INFO - Start of outer fold 2: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:10:52,010 - INFO - After hyperparameter optimization for outer fold 2: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:10:52,175 - INFO - After SHAP computation for outer fold 2: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:10:52,175 - INFO - Completed fs_method: None, model_type: RandomForest, outer_fold: 2
+2024-10-09 11:10:52,175 - INFO - Fold Time: 21.80 seconds
+2024-10-09 11:10:52,175 - INFO - Start of outer fold 3: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:14,605 - INFO - After hyperparameter optimization for outer fold 3: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:14,776 - INFO - After SHAP computation for outer fold 3: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:14,776 - INFO - Completed fs_method: None, model_type: RandomForest, outer_fold: 3
+2024-10-09 11:11:14,776 - INFO - Fold Time: 22.60 seconds
+2024-10-09 11:11:14,776 - INFO - Start of outer fold 4: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:30,029 - INFO - After hyperparameter optimization for outer fold 4: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:30,279 - INFO - After SHAP computation for outer fold 4: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:30,279 - INFO - Completed fs_method: None, model_type: RandomForest, outer_fold: 4
+2024-10-09 11:11:30,279 - INFO - Fold Time: 15.50 seconds
+2024-10-09 11:11:30,279 - INFO - Start of outer fold 5: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:46,712 - INFO - After hyperparameter optimization for outer fold 5: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:47,027 - INFO - After SHAP computation for outer fold 5: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:47,027 - INFO - Completed fs_method: None, model_type: RandomForest, outer_fold: 5
+2024-10-09 11:11:47,027 - INFO - Fold Time: 16.75 seconds
+2024-10-09 11:11:47,027 - INFO - Completed fs_method: None, model_type: RandomForest
+2024-10-09 11:11:47,027 - INFO - Elapsed Time: 98.10 seconds
+2024-10-09 11:11:47,027 - INFO - Average Accuracy on Outer Folds: 0.4000
+2024-10-09 11:11:47,027 - INFO - Start of outer fold 1: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:51,194 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:11:51,414 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:11:51,414 - INFO - Completed fs_method: None, model_type: XGBoost, outer_fold: 1
+2024-10-09 11:11:51,414 - INFO - Fold Time: 4.39 seconds
+2024-10-09 11:11:51,414 - INFO - Start of outer fold 2: Memory usage: 0.16 GB | Virtual memory: 0.13 GB
+2024-10-09 11:11:55,695 - INFO - After hyperparameter optimization for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:11:55,961 - INFO - After SHAP computation for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:11:55,961 - INFO - Completed fs_method: None, model_type: XGBoost, outer_fold: 2
+2024-10-09 11:11:55,961 - INFO - Fold Time: 4.55 seconds
+2024-10-09 11:11:55,961 - INFO - Start of outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:11:59,348 - INFO - After hyperparameter optimization for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:11:59,457 - INFO - After SHAP computation for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:11:59,457 - INFO - Completed fs_method: None, model_type: XGBoost, outer_fold: 3
+2024-10-09 11:11:59,457 - INFO - Fold Time: 3.50 seconds
+2024-10-09 11:11:59,457 - INFO - Start of outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:03,267 - INFO - After hyperparameter optimization for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:03,486 - INFO - After SHAP computation for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:03,486 - INFO - Completed fs_method: None, model_type: XGBoost, outer_fold: 4
+2024-10-09 11:12:03,486 - INFO - Fold Time: 4.03 seconds
+2024-10-09 11:12:03,486 - INFO - Start of outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:09,335 - INFO - After hyperparameter optimization for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:09,601 - INFO - After SHAP computation for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:09,601 - INFO - Completed fs_method: None, model_type: XGBoost, outer_fold: 5
+2024-10-09 11:12:09,601 - INFO - Fold Time: 6.11 seconds
+2024-10-09 11:12:09,617 - INFO - Completed fs_method: None, model_type: XGBoost
+2024-10-09 11:12:09,617 - INFO - Elapsed Time: 120.69 seconds
+2024-10-09 11:12:09,617 - INFO - Average Accuracy on Outer Folds: 0.4000
+2024-10-09 11:12:09,617 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:12,970 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:13,065 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:13,065 - INFO - Completed fs_method: None, model_type: StochasticXGBoost, outer_fold: 1
+2024-10-09 11:12:13,065 - INFO - Fold Time: 3.45 seconds
+2024-10-09 11:12:13,065 - INFO - Start of outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:17,363 - INFO - After hyperparameter optimization for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:17,428 - INFO - After SHAP computation for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:17,428 - INFO - Completed fs_method: None, model_type: StochasticXGBoost, outer_fold: 2
+2024-10-09 11:12:17,428 - INFO - Fold Time: 4.36 seconds
+2024-10-09 11:12:17,428 - INFO - Start of outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:21,187 - INFO - After hyperparameter optimization for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:21,328 - INFO - After SHAP computation for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:21,328 - INFO - Completed fs_method: None, model_type: StochasticXGBoost, outer_fold: 3
+2024-10-09 11:12:21,328 - INFO - Fold Time: 3.90 seconds
+2024-10-09 11:12:21,328 - INFO - Start of outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:25,766 - INFO - After hyperparameter optimization for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:25,922 - INFO - After SHAP computation for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:25,922 - INFO - Completed fs_method: None, model_type: StochasticXGBoost, outer_fold: 4
+2024-10-09 11:12:25,922 - INFO - Fold Time: 4.59 seconds
+2024-10-09 11:12:25,922 - INFO - Start of outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:30,579 - INFO - After hyperparameter optimization for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:30,751 - INFO - After SHAP computation for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:30,751 - INFO - Completed fs_method: None, model_type: StochasticXGBoost, outer_fold: 5
+2024-10-09 11:12:30,751 - INFO - Fold Time: 4.83 seconds
+2024-10-09 11:12:30,752 - INFO - Completed fs_method: None, model_type: StochasticXGBoost
+2024-10-09 11:12:30,752 - INFO - Elapsed Time: 141.82 seconds
+2024-10-09 11:12:30,752 - INFO - Average Accuracy on Outer Folds: 0.3333
+2024-10-09 11:12:30,752 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:30,814 - WARNING - No features selected for fs_method: L1-LogReg, model_type: RandomForest, outer_fold: 1
+2024-10-09 11:12:30,814 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:30,861 - WARNING - No features selected for fs_method: L1-LogReg, model_type: RandomForest, outer_fold: 1
+2024-10-09 11:12:30,861 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:30,908 - WARNING - No features selected for fs_method: L1-LogReg, model_type: RandomForest, outer_fold: 1
+2024-10-09 11:12:30,908 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:30,955 - WARNING - No features selected for fs_method: L1-LogReg, model_type: RandomForest, outer_fold: 1
+2024-10-09 11:12:30,955 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:51,581 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:51,985 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:51,985 - INFO - Completed fs_method: L1-LogReg, model_type: RandomForest, outer_fold: 1
+2024-10-09 11:12:51,985 - INFO - Fold Time: 21.03 seconds
+2024-10-09 11:12:51,985 - INFO - Completed fs_method: L1-LogReg, model_type: RandomForest
+2024-10-09 11:12:51,985 - INFO - Elapsed Time: 163.06 seconds
+2024-10-09 11:12:51,985 - INFO - Average Accuracy on Outer Folds: 0.3333
+2024-10-09 11:12:51,985 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:52,025 - WARNING - No features selected for fs_method: L1-LogReg, model_type: XGBoost, outer_fold: 1
+2024-10-09 11:12:52,025 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:52,056 - WARNING - No features selected for fs_method: L1-LogReg, model_type: XGBoost, outer_fold: 1
+2024-10-09 11:12:52,056 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:52,107 - WARNING - No features selected for fs_method: L1-LogReg, model_type: XGBoost, outer_fold: 1
+2024-10-09 11:12:52,107 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:52,141 - WARNING - No features selected for fs_method: L1-LogReg, model_type: XGBoost, outer_fold: 1
+2024-10-09 11:12:52,141 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:56,514 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:56,687 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:56,687 - INFO - Completed fs_method: L1-LogReg, model_type: XGBoost, outer_fold: 1
+2024-10-09 11:12:56,687 - INFO - Fold Time: 4.55 seconds
+2024-10-09 11:12:56,692 - INFO - Completed fs_method: L1-LogReg, model_type: XGBoost
+2024-10-09 11:12:56,692 - INFO - Elapsed Time: 167.76 seconds
+2024-10-09 11:12:56,692 - INFO - Average Accuracy on Outer Folds: 0.3333
+2024-10-09 11:12:56,693 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:56,740 - WARNING - No features selected for fs_method: L1-LogReg, model_type: StochasticXGBoost, outer_fold: 1
+2024-10-09 11:12:56,740 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:56,785 - WARNING - No features selected for fs_method: L1-LogReg, model_type: StochasticXGBoost, outer_fold: 1
+2024-10-09 11:12:56,785 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:56,824 - WARNING - No features selected for fs_method: L1-LogReg, model_type: StochasticXGBoost, outer_fold: 1
+2024-10-09 11:12:56,824 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:12:56,855 - WARNING - No features selected for fs_method: L1-LogReg, model_type: StochasticXGBoost, outer_fold: 1
+2024-10-09 11:12:56,855 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:13:02,079 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:13:02,406 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:13:02,406 - INFO - Completed fs_method: L1-LogReg, model_type: StochasticXGBoost, outer_fold: 1
+2024-10-09 11:13:02,406 - INFO - Fold Time: 5.55 seconds
+2024-10-09 11:13:02,410 - INFO - Completed fs_method: L1-LogReg, model_type: StochasticXGBoost
+2024-10-09 11:13:02,410 - INFO - Elapsed Time: 173.48 seconds
+2024-10-09 11:13:02,410 - INFO - Average Accuracy on Outer Folds: 0.3333
+2024-10-09 11:13:02,410 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:14:01,309 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:14:02,356 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:14:02,357 - INFO - Completed fs_method: SFS-CV, model_type: RandomForest, outer_fold: 1
+2024-10-09 11:14:02,357 - INFO - Fold Time: 59.95 seconds
+2024-10-09 11:14:02,357 - INFO - Start of outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:15:39,569 - INFO - After hyperparameter optimization for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:15:41,380 - INFO - After SHAP computation for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:15:41,380 - INFO - Completed fs_method: SFS-CV, model_type: RandomForest, outer_fold: 2
+2024-10-09 11:15:41,380 - INFO - Fold Time: 99.02 seconds
+2024-10-09 11:15:41,380 - INFO - Start of outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:16:55,318 - INFO - After hyperparameter optimization for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:16:56,280 - INFO - After SHAP computation for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:16:56,280 - INFO - Completed fs_method: SFS-CV, model_type: RandomForest, outer_fold: 3
+2024-10-09 11:16:56,280 - INFO - Fold Time: 74.90 seconds
+2024-10-09 11:16:56,280 - INFO - Start of outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:17:46,198 - INFO - After hyperparameter optimization for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:17:46,921 - INFO - After SHAP computation for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:17:46,921 - INFO - Completed fs_method: SFS-CV, model_type: RandomForest, outer_fold: 4
+2024-10-09 11:17:46,921 - INFO - Fold Time: 50.64 seconds
+2024-10-09 11:17:46,921 - INFO - Start of outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:19:45,001 - INFO - After hyperparameter optimization for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:19:47,766 - INFO - After SHAP computation for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:19:47,766 - INFO - Completed fs_method: SFS-CV, model_type: RandomForest, outer_fold: 5
+2024-10-09 11:19:47,766 - INFO - Fold Time: 120.85 seconds
+2024-10-09 11:19:47,774 - INFO - Completed fs_method: SFS-CV, model_type: RandomForest
+2024-10-09 11:19:47,774 - INFO - Elapsed Time: 578.84 seconds
+2024-10-09 11:19:47,774 - INFO - Average Accuracy on Outer Folds: 0.4000
+2024-10-09 11:19:47,775 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:20:43,877 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:20:44,551 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:20:44,551 - INFO - Completed fs_method: SFS-CV, model_type: XGBoost, outer_fold: 1
+2024-10-09 11:20:44,552 - INFO - Fold Time: 56.78 seconds
+2024-10-09 11:20:44,552 - INFO - Start of outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:21:38,648 - INFO - After hyperparameter optimization for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:21:38,837 - INFO - After SHAP computation for outer fold 2: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:21:38,837 - INFO - Completed fs_method: SFS-CV, model_type: XGBoost, outer_fold: 2
+2024-10-09 11:21:38,837 - INFO - Fold Time: 54.29 seconds
+2024-10-09 11:21:38,842 - INFO - Start of outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:22:08,734 - INFO - After hyperparameter optimization for outer fold 3: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:22:09,121 - INFO - After SHAP computation for outer fold 3: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:22:09,121 - INFO - Completed fs_method: SFS-CV, model_type: XGBoost, outer_fold: 3
+2024-10-09 11:22:09,121 - INFO - Fold Time: 30.28 seconds
+2024-10-09 11:22:09,121 - INFO - Start of outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:22:32,230 - INFO - After hyperparameter optimization for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:22:32,355 - INFO - After SHAP computation for outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:22:32,355 - INFO - Completed fs_method: SFS-CV, model_type: XGBoost, outer_fold: 4
+2024-10-09 11:22:32,355 - INFO - Fold Time: 23.23 seconds
+2024-10-09 11:22:32,355 - INFO - Start of outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:22:56,072 - INFO - After hyperparameter optimization for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:22:56,276 - INFO - After SHAP computation for outer fold 5: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:22:56,276 - INFO - Completed fs_method: SFS-CV, model_type: XGBoost, outer_fold: 5
+2024-10-09 11:22:56,276 - INFO - Fold Time: 23.92 seconds
+2024-10-09 11:22:56,292 - INFO - Completed fs_method: SFS-CV, model_type: XGBoost
+2024-10-09 11:22:56,292 - INFO - Elapsed Time: 767.36 seconds
+2024-10-09 11:22:56,292 - INFO - Average Accuracy on Outer Folds: 0.4000
+2024-10-09 11:22:56,292 - INFO - Start of outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:23:21,918 - INFO - After hyperparameter optimization for outer fold 1: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:23:22,193 - INFO - After SHAP computation for outer fold 1: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:23:22,193 - INFO - Completed fs_method: SFS-CV, model_type: StochasticXGBoost, outer_fold: 1
+2024-10-09 11:23:22,193 - INFO - Fold Time: 25.90 seconds
+2024-10-09 11:23:22,209 - INFO - Start of outer fold 2: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:23:46,097 - INFO - After hyperparameter optimization for outer fold 2: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:23:46,318 - INFO - After SHAP computation for outer fold 2: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:23:46,318 - INFO - Completed fs_method: SFS-CV, model_type: StochasticXGBoost, outer_fold: 2
+2024-10-09 11:23:46,318 - INFO - Fold Time: 24.11 seconds
+2024-10-09 11:23:46,318 - INFO - Start of outer fold 3: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:24:09,730 - INFO - After hyperparameter optimization for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.14 GB
+2024-10-09 11:24:09,890 - INFO - After SHAP computation for outer fold 3: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:24:09,890 - INFO - Completed fs_method: SFS-CV, model_type: StochasticXGBoost, outer_fold: 3
+2024-10-09 11:24:09,890 - INFO - Fold Time: 23.57 seconds
+2024-10-09 11:24:09,890 - INFO - Start of outer fold 4: Memory usage: 0.17 GB | Virtual memory: 0.15 GB
+2024-10-09 11:24:35,351 - INFO - After hyperparameter optimization for outer fold 4: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:24:35,692 - INFO - After SHAP computation for outer fold 4: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:24:35,692 - INFO - Completed fs_method: SFS-CV, model_type: StochasticXGBoost, outer_fold: 4
+2024-10-09 11:24:35,692 - INFO - Fold Time: 25.80 seconds
+2024-10-09 11:24:35,692 - INFO - Start of outer fold 5: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:24:59,844 - INFO - After hyperparameter optimization for outer fold 5: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:25:00,033 - INFO - After SHAP computation for outer fold 5: Memory usage: 0.18 GB | Virtual memory: 0.15 GB
+2024-10-09 11:25:00,033 - INFO - Completed fs_method: SFS-CV, model_type: StochasticXGBoost, outer_fold: 5
+2024-10-09 11:25:00,033 - INFO - Fold Time: 24.34 seconds
+2024-10-09 11:25:00,033 - INFO - Completed fs_method: SFS-CV, model_type: StochasticXGBoost
+2024-10-09 11:25:00,033 - INFO - Elapsed Time: 891.10 seconds
+2024-10-09 11:25:00,033 - INFO - Average Accuracy on Outer Folds: 0.4000
+2024-10-09 11:25:00,033 - INFO - Total runtime: 891.10 seconds
+2024-10-09 11:25:00,041 - INFO - End of script: Memory usage: 0.18 GB | Virtual memory: 0.15 GB

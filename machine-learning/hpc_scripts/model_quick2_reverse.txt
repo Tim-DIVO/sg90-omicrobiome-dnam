@@ -1,0 +1,39 @@
+#!/bin/bash
+#PBS -P SFS_Missing_Folds 
+#PBS -q parallel24                 
+#PBS -l select=1:ncpus=24:mpiprocs=24:mem=160GB
+#PBS -l walltime=480:00:00          
+#PBS -j oe                         
+#PBS -N SFS_Missing_Folds             
+
+# Move to the working directory
+cd ${PBS_O_WORKDIR}
+
+# Log the nodefile contents and check np
+echo "Nodefile content:"
+cat ${PBS_NODEFILE}
+np=$(cat ${PBS_NODEFILE} | wc -l)
+echo "Number of processors (np): $np"
+
+# Source the Python environment (fixing the path)
+source /app1/ebenv Python-3.10.4
+if [ $? -ne 0 ]; then
+  echo "Error loading Python environment"
+  exit 1
+fi
+
+# Check if mpirun is available
+which mpirun
+if [ $? -ne 0 ]; then
+  echo "Error: mpirun command not found"
+  exit 1
+fi
+
+# Run the Python script with mpirun using the nodefile
+mpirun -np ${np} --hostfile ${PBS_NODEFILE} python sfs_xgboost_fold45.py
+if [ $? -ne 0 ]; then
+  echo "Error during mpirun execution"
+  exit 1
+fi
+
+exit 0
