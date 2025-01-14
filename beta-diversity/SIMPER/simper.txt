@@ -1,0 +1,39 @@
+#!/bin/bash
+#PBS -P Simper  
+#PBS -q serial                 
+#PBS -l select=1:ncpus=1:mem=15GB
+#PBS -l walltime=480:00:00          
+#PBS -j oe                         
+#PBS -N Simper   
+
+# Move to the working directory
+cd ${PBS_O_WORKDIR}
+
+# Log the nodefile contents and check np
+echo "Nodefile content:"
+cat ${PBS_NODEFILE}
+np=$(cat ${PBS_NODEFILE} | wc -l)
+echo "Number of processors (np): $np"
+
+# Load the environment for R 4.2.1
+source /app1/ebenv R-4.2.1
+if [ $? -ne 0 ]; then
+  echo "Error loading R environment"
+  exit 1
+fi
+
+# Check if mpirun is available
+which mpirun
+if [ $? -ne 0 ]; then
+  echo "Error: mpirun command not found"
+  exit 1
+fi
+
+# Run the Python script with mpirun using the nodefile
+mpirun -np ${np} --hostfile ${PBS_NODEFILE} Rscript simper.R
+if [ $? -ne 0 ]; then
+  echo "Error during mpirun execution"
+  exit 1
+fi
+
+exit 0
