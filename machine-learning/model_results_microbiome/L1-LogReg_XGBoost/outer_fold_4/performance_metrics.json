@@ -1,0 +1,1 @@
+{"fs_method": "L1-LogReg", "model_type": "XGBoost", "outer_fold": 4, "accuracy": 0.5806451612903226, "precision": 0.5837837837837837, "recall": 0.5806451612903226, "f1_score": 0.5766806722689075, "roc_auc": 0.5515088449531738, "log_loss": 0.9955138151323603}
