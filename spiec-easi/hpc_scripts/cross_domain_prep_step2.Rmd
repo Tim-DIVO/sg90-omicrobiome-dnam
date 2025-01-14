@@ -1,0 +1,223 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(readr)
+library(devtools)
+library(SpiecEasi)
+library(future)
+
+```
+
+```{r}
+# Read the TSV file into a dataframe
+microbiome <- read_csv("../Linux/cleaned_asv_df.csv")
+cpgs <- read_csv("aligned_betas.csv")
+
+
+```
+
+
+```{r}
+print(dim(cpgs))
+print(dim(microbiome))
+```
+
+
+
+
+```{r}
+# Assuming df is your dataframe
+metadata <- tail(colnames(microbiome), 13)
+
+# Combine 'Sample_ID' and the metadata columns
+columns_to_exclude <- c("Sample_ID", metadata)
+
+# Remove the specified columns from the dataframe
+microbiome <- microbiome[, !colnames(microbiome) %in% columns_to_exclude]
+
+write.csv(microbiome, "asvs.csv", row.names = FALSE)
+
+# View the updated dataframe
+print(microbiome)
+print(cpgs)
+
+```
+
+
+```{r}
+# only retain i.e. asvs that are present in at least 10% of samples
+threshold <- nrow(microbiome) * 0.20
+
+# Identify columns (ASVs) where the number of non-zero values is >= threshold
+columns_to_keep <- colSums(microbiome != 0) >= threshold
+
+# Filter the dataframe to keep only these columns
+microbiome_filtered <- microbiome[, columns_to_keep]
+
+# Check how many columns are left
+num_columns_left <- ncol(microbiome_filtered)
+print(paste("Number of columns left after filtering:", num_columns_left))
+
+# Output the resulting dataframe
+print("Filtered microbiome dataframe:")
+print(microbiome_filtered)
+
+```
+
+
+
+
+
+
+```{r}
+# Check if there are any missing values in the dataframe
+any_na <- any(is.na(cpgs))
+print(paste("Are there any missing values in the dataframe?", any_na))
+
+# Count the total number of missing values
+total_na <- sum(is.na(cpgs))
+print(paste("Total number of missing values:", total_na))
+
+# Identify the rows and columns containing missing values
+missing_rows <- which(rowSums(is.na(cpgs)) > 0)
+missing_cols <- which(colSums(is.na(cpgs)) > 0)
+
+print("Rows with missing values:")
+print(length(missing_rows))
+
+print("Columns with missing values:")
+print(length(missing_cols))
+
+# Calculate the percentage of missing values in each column
+missing_percentage <- colSums(is.na(cpgs)) / nrow(cpgs) * 100
+
+# Identify columns with more than 20% missing values
+columns_with_high_na <- which(missing_percentage > 20)
+
+# Count the number of such columns
+num_high_na_columns <- length(columns_with_high_na)
+
+# Output the results
+print(paste("Number of columns with more than 20% missing values:", num_high_na_columns))
+#print("Column indices with more than 50% missing values:")
+#print(columns_with_high_na)
+
+```
+
+
+```{r}
+library(dplyr)
+
+# Step 2: Identify columns with more than 20% missing values
+columns_to_remove <- which(missing_percentage > 20)
+
+# Step 3: Remove those columns from the dataframe
+cpgs_filtered <- cpgs[, -columns_to_remove]
+
+# Step 4: Ensure all columns are numeric
+cpgs_filtered <- cpgs_filtered %>%
+  mutate(across(everything(), as.numeric))
+
+# Step 5: Perform median imputation for remaining columns
+cpgs_imputed <- cpgs_filtered
+for (col in colnames(cpgs_imputed)) {
+  #print(paste("Processing column:", col)) # Debug: Print column name
+  
+  # Check column class
+  #print(paste("Column class:", class(cpgs_imputed[[col]])))
+  
+  # Check for NA values before imputation
+  num_na <- sum(is.na(cpgs_imputed[[col]]))
+  #print(paste("Number of NA values before imputation:", num_na))
+  
+  # Attempt median imputation
+  if (num_na > 0) {
+    cpgs_imputed[[col]][is.na(cpgs_imputed[[col]])] <- median(cpgs_imputed[[col]], na.rm = TRUE)
+    print(paste("Imputed missing values in column:", col))
+  } 
+  
+  # Check column after imputation
+  #print(paste("Number of NA values after imputation:", sum(is.na(cpgs_imputed[[col]]))))
+}
+
+# Output the resulting dataframe
+print("Columns with high NA removed, and median imputation applied:")
+print(head(cpgs_imputed))
+
+
+```
+
+```{r}
+print(dim(cpgs_imputed))
+# Save the cpgs_imputed dataframe to a CSV file
+write.csv(cpgs_imputed, "cpgs_imputed.csv", row.names = FALSE)
+```
+
+```{r}
+write.csv(variance_explained, "cpgs_variance_explained.csv")
+```
+
+
+```{r}
+# Perform PCA on the dataframe 'cpgs'
+# Assuming cpgs is already a numeric dataframe with no non-numeric columns
+pca_result <- prcomp(cpgs_imputed)
+
+# Calculate the variance explained by each principal component
+variance_explained <- pca_result$sdev^2 / sum(pca_result$sdev^2) * 100
+
+# Calculate the cumulative variance explained
+cumulative_variance <- cumsum(variance_explained)
+
+cumulative_variance_100 <- cumulative_variance[100]
+  print(paste("Cumulative variance explained by the first 100 components:", cumulative_variance_100))
+
+# Plot the cumulative percentage of variance explained
+plot(cumulative_variance, type = "o", pch = 19, xlab = "Principal Components",
+     ylab = "Cumulative Percentage of Variance Explained",
+     main = "Cumulative Variance Explained by PCA")
+abline(h = seq(0, 100, by = 10), col = "lightgray", lty = "dotted")
+
+```
+
+
+
+
+```{r}
+# Save PCA loadings (eigenvectors)
+loadings <- pca_result$rotation
+
+# Save PCA scores (principal component projections)
+scores <- pca_result$x
+
+# Save dataframe with features matching the number of principal components
+df_all_pcs <- scores
+df_first_100_pcs <- scores[, 1:min(100, ncol(scores))]
+
+# Write PCA loadings to CSV
+write.csv(loadings, "pca_loadings_all_components.csv", row.names = FALSE)
+write.csv(loadings[, 1:min(100, ncol(loadings))], "pca_loadings_first_100_components.csv", row.names = FALSE)
+
+# Write PCA scores to CSV
+write.csv(scores, "pca_scores_all_components.csv", row.names = FALSE)
+write.csv(df_first_100_pcs, "pca_scores_first_100_components.csv", row.names = FALSE)
+
+# Write reduced dataframes to CSV
+write.csv(df_all_pcs, "pca_df.csv", row.names = FALSE)
+write.csv(df_first_100_pcs, "pca_df_100.csv", row.names = FALSE)
+
+# Output confirmation
+print("Saved PCA loadings, scores, and reduced dataframes for all components and the first 100 components.")
+```
+
+
+
+
+
+
+
+

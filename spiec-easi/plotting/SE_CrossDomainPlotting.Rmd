@@ -1,0 +1,609 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+# Load the readxl package
+library(readxl)
+library(devtools)
+library(SpiecEasi)
+library(future)
+library(igraph)
+
+```
+
+
+
+```{r}
+# Load the RDS file
+se.mb <- readRDS("se_1e1_mb.rds")
+#se.gl <- readRDS("HPC_results/se_1e3_gl.rds")
+
+# read dfs
+df <- read.csv("../Linux/cleaned_asv_df.csv")
+asvs <- read.csv("asvs.csv")
+betas_pca <- read.csv("pca_df_100.csv")
+taxonomy <- read_excel("../Summary/summary/6_taxonomy_community/feature_taxonomy_split.xlsx")
+
+#matrices
+betas_pca <- as.matrix(betas_pca)
+asvs <- as.matrix(asvs)
+
+```
+
+
+```{r}
+# get the same asvs that network has been calculated with
+
+threshold <- nrow(asvs) * 0.15
+# Identify columns (ASVs) where the number of non-zero values is >= threshold
+columns_to_keep <- colSums(asvs != 0) >= threshold
+# Filter the dataframe to keep only these columns
+microbiome_filtered <- asvs[, columns_to_keep]
+```
+
+
+
+```{r}
+#MB method
+dtype <- c(rep(1,dim(microbiome_filtered)[2]), rep(2,dim(betas_pca)[2]))
+plot(adj2igraph(getRefit(se.mb)), vertex.color=dtype+1, vertex.size=9)
+vertex_colors <- ifelse(dtype == 1, "red", "blue")
+vertex_shapes <- ifelse(dtype == 1, "circle", "square")
+
+adj_matrix <- getRefit(se.mb)  # Ensure getRefit works with your object
+graph <- adj2igraph(adj_matrix)
+
+# Assign colors and shapes to the graph vertices
+V(graph)$color <- vertex_colors
+V(graph)$shape <- vertex_shapes
+V(graph)$size <- 9  # You can adjust the size as needed
+
+# Plot the graph
+plot(graph, vertex.label = NA)  # Supp
+```
+
+
+
+
+```{r}
+# 4. Convert Numeric Data Types to Descriptive Labels
+dtype_label <- ifelse(dtype == 1, "Microbial Taxa", "CpG Site")
+
+# Calculate centrality measures
+degree_centrality <- degree(graph, mode = "all")
+betweenness_centrality <- betweenness(graph, normalized = TRUE)
+closeness_centrality <- closeness(graph, normalized = TRUE)
+
+# 8. Create the centrality_df with Data Type
+# Ensure node names are present
+taxa_names <- V(graph)$name
+
+# Create the centrality data frame
+centrality_df <- data.frame(
+  node = taxa_names,
+  degree = degree_centrality,
+  betweenness = betweenness_centrality,
+  closeness = closeness_centrality,
+  data_type = dtype_label,  # Add data type column
+  stringsAsFactors = FALSE
+)
+
+# View the first few rows of the centrality data frame
+centrality_df
+
+
+
+```
+```{r}
+neighbors(graph, 301, mode="all")
+```
+
+
+
+
+```{r}
+
+# Filter nodes with degree > 0
+centrality_df <- centrality_df[centrality_df$degree > 0, ]
+
+# Update graph to include only connected nodes
+graph <- induced_subgraph(graph, vids = centrality_df$node)
+
+# Recalculate centrality measures
+centrality_df$degree <- degree(graph, mode = "all")
+centrality_df$betweenness <- betweenness(graph, normalized = TRUE)
+centrality_df$closeness <- closeness(graph, normalized = TRUE)
+
+# Create centrality_df with updated measures and data type
+centrality_df <- data.frame(
+  node = V(graph)$name,
+  degree = centrality_df$degree,
+  betweenness = centrality_df$betweenness,
+  closeness = centrality_df$closeness,
+  data_type = centrality_df$data_type,
+  stringsAsFactors = FALSE
+)
+
+# Identify top 10 nodes by each centrality measure
+top_n <- 10
+
+top_degree <- centrality_df[order(-centrality_df$degree), ][1:top_n, ]
+top_betweenness <- centrality_df[order(-centrality_df$betweenness), ][1:top_n, ]
+top_closeness <- centrality_df[order(-centrality_df$closeness), ][1:top_n, ]
+
+# Display top nodes
+print("Top Nodes by Degree Centrality:")
+print(top_degree)
+
+print("Top Nodes by Betweenness Centrality:")
+print(top_betweenness)
+
+print("Top Nodes by Closeness Centrality:")
+print(top_closeness)
+
+```
+
+
+```{r}
+centrality_df
+```
+
+
+
+```{r}
+#GOAL OF BLOCK: DELETE CPG SITES NOT CONNECTED TO MICROBIOME FROM GRAPH
+# FIGURE OUT WHICH SPECIES ARE CONNECTED TO CPG SITES IN GRAPH
+
+# Assuming `graph` is your original igraph object
+# and `centrality_df` contains node metadata
+
+# Step 1: Get node names and data types from centrality_df
+node_data <- centrality_df
+cpg_nodes <- node_data$node[node_data$data_type == "CpG Site"]
+non_cpg_nodes <- node_data$node[node_data$data_type != "CpG Site"]
+
+# Step 2: Identify CpG nodes connected to only other CpG nodes
+# Initialize a list to store CpG nodes to delete
+cpg_to_delete <- c()
+
+# Loop through all CpG nodes
+for (node in cpg_nodes) {
+  # Find neighbors of the current node
+  neighbors <- neighbors(graph, as.character(node))
+  
+  # Check if all neighbors are CpG nodes
+  neighbor_types <- node_data$data_type[node_data$node %in% names(neighbors)]
+  
+  if (all(neighbor_types == "CpG Site")) {
+    cpg_to_delete <- c(cpg_to_delete, as.character(node))
+  }
+}
+
+# Step 3: Remove CpG nodes that only connect to other CpG nodes
+graph_filtered <- delete_vertices(graph, cpg_to_delete)
+
+# Step 3: Remove these CpG nodes from centrality_df
+centrality_df_filtered <- centrality_df[!centrality_df$node %in% cpg_to_delete, ]
+
+
+# Step 4: Save non-CpG nodes that are connected to remaining CpG nodes
+remaining_cpg_nodes <- V(graph_filtered)$name[V(graph_filtered)$name %in% cpg_nodes]
+connected_non_cpg <- c()
+
+for (node in remaining_cpg_nodes) {
+  neighbors <- neighbors(graph_filtered, as.character(node))
+  neighbor_names <- names(neighbors)
+  
+  # Add non-CpG nodes to the list
+  connected_non_cpg <- c(connected_non_cpg, neighbor_names[neighbor_names %in% non_cpg_nodes])
+}
+
+# Ensure unique nodes
+connected_non_cpg <- unique(connected_non_cpg)
+
+# Step 5: Save the result
+connected_non_cpg_list <- connected_non_cpg
+#print("Non-CpG nodes connected to CpG nodes:")
+#print(connected_non_cpg_list)
+
+selected_columns <- colnames(microbiome_filtered)[as.numeric(connected_non_cpg_list)]
+
+# Remove leading "X" from feature IDs in selected_columns
+selected_columns <- gsub("^X", "", selected_columns)
+
+# Step 3: Print the selected column names
+#print("Selected column names corresponding to connected_non_cpg_list:")
+#print(selected_columns)
+
+# Filter taxonomy rows where "feature ID" matches selected_columns
+matched_rows <- taxonomy[taxonomy$`feature ID` %in% selected_columns, ]
+
+# Extract species values and create the connected_species dataframe
+connected_species <- data.frame(
+  Node = connected_non_cpg_list,                 # Nodes from connected_non_cpg_list
+  ASV = selected_columns,                        # ASV IDs from selected_columns
+  Species = matched_rows$Species[match(selected_columns, matched_rows$`feature ID`)] # Species matches
+)
+
+# View the resulting dataframe
+#print("Connected Species dataframe:")
+#print(connected_species)
+
+
+
+```
+```{r}
+connected_species
+```
+
+```{r}
+variance_explained <- read.csv("cpgs_variance_explained.csv")
+```
+
+
+
+
+```{r}
+# Load libraries
+library(igraph)
+library(aricode)
+
+
+# Number of iterations
+num_runs <- 100
+
+# Store community memberships for each run
+community_memberships <- list()
+
+# Run Louvain algorithm multiple times
+for (i in 1:num_runs) {
+  communities <- cluster_louvain(graph_filtered)
+  community_memberships[[i]] <- communities$membership
+}
+
+# Initialize a matrix to store NMI values
+nmi_matrix <- matrix(0, nrow = num_runs, ncol = num_runs)
+
+# Calculate pairwise NMI between all runs
+for (i in 1:num_runs) {
+  for (j in i:num_runs) {
+    nmi_value <- NMI(community_memberships[[i]], community_memberships[[j]])
+    nmi_matrix[i, j] <- nmi_value
+    nmi_matrix[j, i] <- nmi_value  # Symmetric matrix
+  }
+}
+
+# Print average NMI to assess stability
+avg_nmi <- mean(nmi_matrix[upper.tri(nmi_matrix)])
+cat("Average NMI across runs:", avg_nmi, "\n")
+
+# Find the most 'representative' partition (highest NMI with others)
+nmi_sums <- rowSums(nmi_matrix)
+best_run <- which.max(nmi_sums)
+cat("Best run (most similar to others):", best_run, "\n")
+```
+
+
+
+
+
+```{r}
+# Load necessary libraries
+library(RColorBrewer)
+library(igraph)
+
+# -------------------------------
+# Step 1: Community Detection and Coloring
+# -------------------------------
+
+
+#to improve stability in community detection, use consensus result from many louvain iterations
+
+library(EGAnet)
+
+consensus_communities <- community.consensus(
+  graph_filtered,
+  consensus.method = "iterative",
+  consensus.iter = 1000
+)
+V(graph_filtered)$community <- consensus_communities
+centrality_df_filtered$community <- consensus_communities
+
+# Assign colors to communities using a less bright palette
+num_communities <- length(unique(V(graph_filtered)$community))
+palette <- brewer.pal(min(num_communities, 12), "Set3")  # Set3 has up to 12 distinct colors
+V(graph_filtered)$color <- palette[V(graph_filtered)$community]
+
+# Enhance shape distinctions
+V(graph_filtered)$shape <- ifelse(centrality_df_filtered$data_type == "Microbial Taxa", "circle", "square")
+
+# -------------------------------
+# Step 2: Tune node size and edges
+# -------------------------------
+
+#first, let node size scale based on centrality degree and give them fine black edges
+V(graph_filtered)$size <- 0.5* centrality_df_filtered$degree 
+V(graph_filtered)$frame.color <- "black"  # black edges
+V(graph_filtered)$frame.width <- 1  # Default line width
+
+# Identify CpG site indices
+cpg_indices <- which(centrality_df_filtered$data_type == "CpG Site")
+
+# Enhance CpG sites' appearance
+V(graph_filtered)$size[cpg_indices] <- 4  # Slightly larger
+V(graph_filtered)$frame.color[cpg_indices] <- "black"  # Bold black edges
+V(graph_filtered)$frame.width[cpg_indices] <- 3        # Thicker edges for CpG sites
+
+# -------------------------------
+# Step 3: Highlight Connected Species
+# -------------------------------
+
+# Match connected species to graph nodes
+matched_indices <- match(V(graph_filtered)$name, connected_species$Node)
+
+# Enhance appearance of connected species
+#V(graph_filtered)$size[!is.na(matched_indices)] <- #V(graph_filtered)$size[!is.na(matched_indices)] * 1.5  # Larger size
+V(graph_filtered)$frame.color[!is.na(matched_indices)] <- "red"  # Red border
+V(graph_filtered)$frame.width[!is.na(matched_indices)] <- 4      # Thicker border
+
+# -------------------------------
+# Step 4: Assign Labels to Vertices
+# -------------------------------
+
+# Initialize labels as empty strings
+labels <- rep("", vcount(graph_filtered))
+
+# -------------------------------
+# Sub-Step 4.1: Label Connected Species with Numbers (1 to 5)
+# -------------------------------
+
+# Extract connected species nodes and assign numerical labels
+connected_nodes <- connected_species$Node
+num_connected <- length(connected_nodes)
+
+# Ensure there are no more than 5 connected species
+#if (num_connected > 5) {
+ # warning("More than 5 connected species found. Only the first 5 will be labeled.")
+ # connected_nodes <- connected_nodes[1:5]
+ # num_connected <- 5
+#}
+
+# Create a mapping from node to number
+species_labels <- setNames(1:num_connected, connected_nodes)
+
+# Assign numerical labels to connected species
+labels[match(connected_nodes, V(graph_filtered)$name)] <- as.character(species_labels[connected_nodes])
+
+# -------------------------------
+# Sub-Step 4.2: Label CpG Sites with Letters (A to E)
+# -------------------------------
+
+# Identify CpG site nodes
+cpg_nodes <- V(graph_filtered)$name[cpg_indices]
+num_cpg <- length(cpg_nodes)
+
+# Assign letters A to E to CpG sites (extend if more than 5)
+cpg_letters <- LETTERS[1:num_cpg]
+# If you have exactly 5 CpG sites, this will be A to E
+# To handle more, you can modify as needed
+
+# -------------------------------
+# Manual Override for CpG Labels
+# -------------------------------
+
+# Create a named vector for manual overrides
+# Example:
+# override_cpg_labels <- c("CpG1" = "Alpha", "CpG3" = "Gamma")
+# If you don't want to override a specific CpG site, set its value to NA or omit it.
+
+# Initialize with default letters
+override_cpg_labels <- setNames(cpg_letters, cpg_nodes)
+
+# Example of manual override (uncomment and modify as needed)
+# override_cpg_labels["CpG_Node_Name1"] <- "X"
+# override_cpg_labels["CpG_Node_Name2"] <- "Y"
+
+# Apply overrides where specified
+manual_overrides <- !is.na(override_cpg_labels) & override_cpg_labels != ""
+cpg_labels_final <- ifelse(manual_overrides, override_cpg_labels, cpg_letters)
+
+# Assign labels to CpG sites
+labels[cpg_indices] <- cpg_labels_final
+
+# Assign labels to vertices
+V(graph_filtered)$label <- labels
+
+# -------------------------------
+# Step 5: Define Layout
+# -------------------------------
+
+layout <- layout_with_fr(graph_filtered)
+
+# -------------------------------
+# Step 6: Plot the Graph and Add Legends
+# -------------------------------
+
+# Open PNG device
+png("multidomain_network_louvain_final_alt2.png", width = 1200, height = 1200)
+
+# Base plot without labels
+plot(
+  graph_filtered,
+  vertex.label = V(graph_filtered)$label,
+  vertex.label.color = "black",  
+  vertex.label.dist = 0.8,           # Distance of label from vertex
+  vertex.label.degree = 0,     # Angle to place the label
+  vertex.label.font = 2,           # Make labels bold
+  vertex.label.cex = 4, 
+  vertex.frame.color = V(graph_filtered)$frame.color,
+  vertex.frame.width = V(graph_filtered)$frame.width,
+  edge.color = "gray",
+  vertex.size = V(graph_filtered)$size,
+  layout = layout
+)
+
+# -------------------------------
+# Step 7: Create Legends
+# -------------------------------
+
+# Legend for Connected Species (Numbers)
+legend_labels_species <- paste0(species_labels, ": ", connected_species$Species[match(names(species_labels), connected_species$Node)])
+
+
+# Legend for Connected Species (Numbers and Species Names)
+legend(
+  "topright",
+  legend = legend_labels_species,  # Use the mapped legend labels
+  pch = 21,                        # Shape of the points in the legend (circle with fill)
+  pt.bg = palette[V(graph_filtered)$community[match(names(species_labels), V(graph_filtered)$name)]],  # Match colors
+  pt.cex = 2,                      # Size of the points
+  #bty = "n",                       # No box around the legend
+  text.col = "black",              # Text color
+  cex = 1.5,                       # Increase legend text size
+  title = expression(bold("Connected Species"))  # Bold and larger legend title
+)
+
+# Legend for CpG Sites (Letters)
+# Retrieve centrality_filtered$node values for CpG sites
+# Assuming centrality_filtered has a 'node' column that corresponds to graph nodes
+cpg_centrality <- centrality_df_filtered$node[cpg_indices]
+
+# Create labels combining letters and centrality values
+values <-  cpg_centrality - 267
+variances <- variance_explained[values,2]
+cpg_legend_labels <- paste0(cpg_labels_final, ": CpG PC", values, " (", variances, "%)")
+
+# Legend for CpG Sites (Letters and Centrality Values)
+legend(
+  "bottomright",
+  legend = cpg_legend_labels,       # Use the mapped legend labels for CpG sites
+  pch = 22,                        # Shape of the points in the legend (square with fill)
+  #pt.bg = "black",                 # Background color of the symbols
+  pt.bg = palette[V(graph_filtered)$community[match(cpg_centrality, V(graph_filtered)$name)]],
+  pt.cex = 2,                      # Size of the points
+  #bty = "n",                       # No box around the legend
+  text.col = "black",              # Text color
+  cex = 1.5,                       # Increase legend text size
+  title = expression(bold("CpG Sites"))  # Bold and larger legend title
+)
+
+# Close PNG device
+dev.off()
+
+```
+
+
+```{r}
+# Print the number of communities
+num_communities <- length(unique(centrality_df_filtered$community))
+print(paste("Number of communities:", num_communities))
+
+# Print the number of communities with both CpG sites and Microbial taxa
+communities_with_both <- sum(sapply(unique(centrality_df_filtered$community), function(c) {
+  types <- unique(centrality_df_filtered$data_type[centrality_df_filtered$community == c])
+  all(c("Microbial Taxa", "CpG Site") %in% types)
+}))
+print(paste("Number of communities with both CpG sites and Microbial taxa:", communities_with_both))
+
+```
+
+
+```{r}
+write.csv(centrality_df_filtered, "graph_metadata.csv", row.names = FALSE)
+saveRDS(graph_filtered, file = "graph_filtered.Rds")
+```
+
+
+
+```{r}
+write.csv(colnames(microbiome_filtered), "graph_nodenames.csv")
+```
+
+
+
+
+
+```{r}
+
+# Remove last 5 rows
+processed_graph <- graph_metadata[1:(nrow(graph_metadata)-5), ]
+remaining_graph <- graph_metadata[(nrow(graph_metadata)-4):nrow(graph_metadata), ]
+
+# Remove leading "X" from names
+modified_names <- sub("^X", "", names)
+
+# Insert 'feature ID' based on node index
+processed_graph$`feature ID` <- modified_names[processed_graph$node]
+
+# Merge taxonomy_df into processed_graph based on 'feature ID'
+processed_graph <- merge(
+  processed_graph,
+  taxonomy_df,
+  by = "feature ID",
+  all.x = TRUE,
+  sort = FALSE
+)
+
+# Reorder columns
+processed_graph <- processed_graph[, c("node", "feature ID", setdiff(names(processed_graph), c("node", "feature ID")))]
+taxonomy_cols <- names(taxonomy_df)
+remaining_graph[taxonomy_cols] <- NA
+
+# Combine with remaining rows
+graph_metadata <- rbind(processed_graph, remaining_graph)
+
+
+```
+
+
+```{r}
+write.csv(graph_metadata, "graph_metadata.csv")
+```
+
+
+
+```{r}
+graph_filtered <- readRDS("graph_filtered.Rds")
+```
+
+```{r}
+library(igraph)
+neighbors(graph_filtered, 100, mode="all")
+```
+
+
+
+```{r}
+# Add 'mean_abundance' to graph_metadata based on matching 'feature ID' with simper_df$ASV
+graph_metadata$mean_abundance <- simper_df$mean_abundance[match(graph_metadata$`feature ID`, simper_df$ASV)]
+
+
+```
+
+```{r}
+# Remove rows with NA in mean_abundance or degree
+complete_data <- graph_metadata[!is.na(graph_metadata$mean_abundance) & !is.na(graph_metadata$degree), ]
+
+# Create the scatter plot
+plot(complete_data$mean_abundance, complete_data$degree,
+     xlab = "Mean Abundance",
+     ylab = "Degree",
+     main = "Degree vs Mean Abundance",
+     pch = 19,
+     col = "blue")
+
+```
+```{r}
+# Create 'mean_abundance_ranking' with highest value as 1
+graph_metadata$mean_abundance_ranking <- rank(-graph_metadata$mean_abundance, na.last = "keep")
+
+```
+
+```{r}
+V(graph_filtered)$name
+```
+

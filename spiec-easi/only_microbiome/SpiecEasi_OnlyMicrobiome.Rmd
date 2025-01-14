@@ -1,0 +1,173 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(devtools)
+library(SpiecEasi)
+library(future)
+
+```
+
+
+
+```{r}
+# Load the RDS file
+se.mb <- readRDS("se_species_mb1.rds")
+# Species level with both methods
+df <- read.csv("../ML_Data/FINAL_SPECIES_RAW.csv")
+subset_df <- df[, 16:ncol(df)]
+X <- as.matrix(subset_df)
+
+```
+
+
+```{r}
+library(igraph)
+ig.mb     <- adj2igraph(getRefit(se.mb))
+## set size of vertex proportional to clr-mean
+vsize    <- rowMeans(clr(X, 1))+6
+am.coord <- layout.fruchterman.reingold(ig.mb)
+```
+
+
+```{r}
+#plot regular network
+png("spieceasi_plot.png", width = 1200, height = 1200)  # Adjust width and height
+plot(ig.mb, layout = am.coord, vertex.size = vsize*0.4, vertex.label = NA, main = "MB")
+dev.off()  # Close the device to save the file
+
+plot(ig.mb, layout=am.coord, vertex.size=vsize*0.5, vertex.label=NA, main="MB")
+```
+
+
+
+```{r}
+#get network with only subset of somewhat abundant taxa
+
+# Calculate the threshold for the minimum number of non-zero values needed
+threshold <- 0.1 * nrow(subset_df)
+
+# Count non-zero values in each column
+non_zero_counts <- colSums(subset_df != 0)
+
+# Filter columns that meet the threshold
+remaining_columns <- subset_df[, non_zero_counts >= threshold]
+
+# Display the number of remaining columns
+num_remaining_columns <- ncol(remaining_columns)
+num_remaining_columns
+
+```
+
+```{r}
+library(igraph)
+
+# Assuming `remaining_columns` contains the filtered columns after thresholding
+remaining_nodes <- colnames(remaining_columns)
+
+
+# Get the column indices of remaining columns after thresholding
+remaining_indices <- which(colnames(subset_df) %in% colnames(remaining_columns))
+
+# Create a named vector for taxa names
+taxa_names <- colnames(subset_df)[remaining_indices]
+
+# Filter the network to keep only nodes with the specified indices
+filtered_network <- induced_subgraph(ig.mb, remaining_indices)
+
+# Calculate degree centrality (number of connections each node has)
+degree_centrality <- degree(filtered_network)
+
+# Calculate betweenness centrality (number of times a node lies on shortest paths between other nodes)
+betweenness_centrality <- betweenness(filtered_network)
+
+# Calculate closeness centrality (reciprocal of the sum of shortest path distances from the node to all others)
+closeness_centrality <- closeness(filtered_network)
+
+# Combine centrality measures into a data frame
+centrality_df <- data.frame(
+  node = taxa_names,
+  degree = degree_centrality,
+  betweenness = betweenness_centrality,
+  closeness = closeness_centrality
+)
+
+# Identify top nodes based on centrality scores
+top_nodes <- centrality_df[order(-centrality_df$degree), ]
+top_nodes
+
+# Use the Louvain algorithm to detect communities
+communities <- cluster_louvain(filtered_network)
+
+# Assign community membership to each node
+V(filtered_network)$community <- communities$membership
+
+# Identify central nodes within each community by subsetting based on high degree or betweenness
+central_nodes_in_clusters <- centrality_df[centrality_df$degree > quantile(centrality_df$degree, 0.9), ]
+communities
+central_nodes_in_clusters
+
+
+png("spieceasi_plot_filtered.png", width = 1200, height = 1200)  # Adjust width and height
+plot(filtered_network, layout = am.coord, vertex.size = centrality_df$degree*0.2, vertex.label = NA, main = "MB")
+dev.off()  # Close the device to save the file
+
+
+```
+
+
+```{r}
+
+# Assign community membership to each node as colors
+community_colors <- rainbow(max(communities$membership))  # Generate unique colors for each community
+V(filtered_network)$color <- community_colors[communities$membership]
+
+plot(
+  filtered_network,
+  layout = layout_with_kk,
+  vertex.size = centrality_df$degree * 0.5,
+  vertex.label = NA,
+  vertex.color = V(filtered_network)$color,  # Use the assigned community colors
+  main = "Filtered MB Network - Kamada-Kawai (Community Colored)"
+)
+
+# Plot with Kamada-Kawai layout and color by community
+png("filtered_network_community_colored.png", width = 1200, height = 1200)
+plot(
+  filtered_network,
+  layout = layout_with_kk,
+  vertex.size = centrality_df$degree * 0.5,
+  vertex.label = NA,
+  vertex.color = V(filtered_network)$color,  # Use the assigned community colors
+  main = "Filtered MB Network - Kamada-Kawai (Community Colored)"
+)
+dev.off()
+
+```
+
+
+
+```{r}
+library(biomformat)
+# Transpose subset_df so that rows represent species and columns represent samples
+species_abundance <- as.data.frame(t(subset_df))
+
+# Set column names (samples) and row names (species)
+colnames(species_abundance) <- df$Sample_ID  # Assuming the first column of df is sample IDs
+
+# Convert to biom format
+species_biom <- make_biom(data = species_abundance)
+
+# Write to file
+write_biom(species_biom, "species_abundance.biom")
+
+
+```
+
+
+
+

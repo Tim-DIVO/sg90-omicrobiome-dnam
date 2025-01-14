@@ -1,0 +1,60 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(SpiecEasi)
+library(parallel)
+# Set the number of cores
+num_cores <- 4  
+```
+
+```{r}
+microbiome <- read.csv("asvs.csv")
+cpgs <- read.csv("cpgs_imputed.csv")
+cpgs_pca <- read.csv("pca_df_100.csv")
+```
+
+
+```{r}
+# only retain i.e. asvs that are present in at least 10% of samples
+threshold <- nrow(microbiome) * 0.15
+
+# Identify columns (ASVs) where the number of non-zero values is >= threshold
+columns_to_keep <- colSums(microbiome != 0) >= threshold
+
+# Filter the dataframe to keep only these columns
+microbiome_filtered <- microbiome[, columns_to_keep]
+
+# Check how many columns are left
+num_columns_left <- ncol(microbiome_filtered)
+print(paste("Number of columns left after filtering:", num_columns_left))
+
+# Output the resulting dataframe
+print("Filtered microbiome dataframe:")
+print(microbiome_filtered)
+```
+```{r}
+MB_matrix <- as.matrix(microbiome)
+MB_filtered_matrix <- as.matrix(microbiome_filtered)
+Cpg_matrix <- as.matrix(cpgs)
+Cpg_filtered_matrix <- as.matrix(cpgs_filtered)
+```
+
+```{r}
+# Run SpiecEasi with multicore support for mb method
+se.mb <- spiec.easi(list(MB_matrix, Cpg_matrix), method='mb', lambda.min.ratio=1e-3, nlambda=20, pulsar.params=list(rep.num=50, ncores=num_cores))
+saveRDS(se.mb, file = "se_mb.rds")    
+rm(se.mb)  # Remove object from memory
+gc()  # Run garbage collection to free up memory
+
+# Run SpiecEasi with multicore support for glasso method
+se.gl <- spiec.easi(list(MB_matrix, Cpg_matrix), method='glasso', lambda.min.ratio=1e-3, nlambda=20, pulsar.params=list(rep.num=50, ncores=num_cores))
+saveRDS(se.gl, file = "se_gl.rds")
+rm(se.gl)  # Remove object from memory
+gc()  # Run garbage collection to free up memory
+```
+
+

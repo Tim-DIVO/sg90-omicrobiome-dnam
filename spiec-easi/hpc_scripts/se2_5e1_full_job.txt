@@ -1,0 +1,39 @@
+#!/bin/bash
+#PBS -P se2_5e1_full  
+#PBS -q parallel24                 
+#PBS -l select=1:ncpus=24:mpiprocs=24:mem=160GB
+#PBS -l walltime=480:00:00          
+#PBS -j oe                         
+#PBS -N se2_5e1_full   
+
+# Move to the working directory
+cd ${PBS_O_WORKDIR}
+
+# Log the nodefile contents and check np
+echo "Nodefile content:"
+cat ${PBS_NODEFILE}
+np=$(cat ${PBS_NODEFILE} | wc -l)
+echo "Number of processors (np): $np"
+
+# Load the environment for R 4.2.1
+source /app1/ebenv R-4.2.1
+if [ $? -ne 0 ]; then
+  echo "Error loading R environment"
+  exit 1
+fi
+
+# Check if mpirun is available
+which mpirun
+if [ $? -ne 0 ]; then
+  echo "Error: mpirun command not found"
+  exit 1
+fi
+
+# Run the R script with mpirun using the nodefile
+mpirun -np ${np} --hostfile ${PBS_NODEFILE} Rscript se2_5e1_full.R
+if [ $? -ne 0 ]; then
+  echo "Error during mpirun execution"
+  exit 1
+fi
+
+exit 0
