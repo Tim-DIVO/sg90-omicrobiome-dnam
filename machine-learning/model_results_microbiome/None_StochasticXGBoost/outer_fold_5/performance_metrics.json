@@ -1,0 +1,1 @@
+{"fs_method": "None", "model_type": "StochasticXGBoost", "outer_fold": 5, "accuracy": 0.4838709677419355, "precision": 0.4835978835978836, "recall": 0.4838709677419355, "f1_score": 0.4817136886102403, "roc_auc": 0.4911550468262227, "log_loss": 0.7572861102319532}
