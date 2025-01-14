@@ -1,0 +1,799 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(vegan)       # For ecological analysis
+library(ggplot2)     # For data visualization
+library(dplyr)       # For data manipulation
+library(readr)       # For reading CSV files
+library(ggrepel)     # For improved labeling in ggplot2
+library(pheatmap)    # For heatmap visualization
+library(tidyr)
+```
+
+```{r}
+file_path <- "../Linux/cleaned_asv_df.csv"
+df <- read_csv(file_path)
+```
+
+
+```{r}
+metadata_cols <- c("Sample_ID", "Age", "Epigenetic_deviation", "BMI", "Group",
+                   "Race_1.0", "Race_2.0", "Race_3.0", "Race_4.0",
+                   "Sex_1.0", "Sex_2.0",
+                   "Smoking_0.0", "Smoking_1.0", "Smoking_2.0")
+
+# Subset metadata
+metadata <- df %>%
+  select(all_of(metadata_cols))
+
+# Subset ASV counts by excluding metadata columns
+asv_df <- df %>%
+  select(-all_of(metadata_cols))
+
+```
+
+
+```{r}
+# Function to consolidate binary-encoded columns into a single categorical column
+consolidate_binary <- function(df, prefix, new_col_name){
+  df_long <- df %>%
+    pivot_longer(
+      cols = starts_with(prefix),
+      names_to = "category",
+      values_to = "value"
+    ) %>%
+    filter(value == 1) %>%
+    mutate(category = sub(paste0("^", prefix, "_"), "", category)) %>%
+    select(-value) %>%
+    rename(!!new_col_name := category)
+  
+  return(df_long[[new_col_name]])
+}
+
+# Consolidate Race
+metadata <- metadata %>%
+  mutate(Race = consolidate_binary(metadata, "Race", "Race")) 
+
+# Consolidate Sex
+metadata <- metadata %>%
+  mutate(Sex = consolidate_binary(metadata, "Sex", "Sex"))
+
+# Consolidate Smoking
+metadata <- metadata %>%
+  mutate(Smoking = consolidate_binary(metadata, "Smoking", "Smoking"))
+
+# Drop the original binary-encoded columns as they are now consolidated
+metadata <- metadata %>%
+  select(-starts_with("Race_"), -starts_with("Sex_"), -starts_with("Smoking_"))
+
+# Convert categorical variables to factors if not already
+metadata_clean <- metadata %>%
+  mutate(
+    Sex = as.factor(Sex),
+    Race = as.factor(Race),
+    Smoking = as.factor(Smoking),  # Assuming 'SmokingStatus' is the consolidated smoking variable
+    Age = as.numeric(Age),               # If Age is continuous
+    BMI = as.numeric(BMI)                # If BMI is continuous
+  )
+
+
+# Verify the updated metadata
+metadata
+
+```
+
+```{r}
+# Compute Bray-Curtis dissimilarity
+bray_curtis <- vegdist(asv_df, method = "bray")
+
+```
+
+```{r}
+# Perform PCoA
+pcoa_result <- cmdscale(bray_curtis, eig = TRUE, k = 2)  # k=2 for two principal coordinates
+
+# Extract coordinates into a dataframe
+pcoa_df <- as.data.frame(pcoa_result$points)
+colnames(pcoa_df) <- c("PC1", "PC2")
+
+# Calculate percentage of variance explained by each principal coordinate
+variance_explained <- round((pcoa_result$eig / sum(pcoa_result$eig)) * 100, 2)
+
+# Add metadata to the PCoA dataframe
+pcoa_df <- pcoa_df %>%
+  mutate(
+    Group = metadata$Group,
+    Epigenetic_deviation = metadata$Epigenetic_deviation,
+    Age = metadata$Age,
+    BMI = metadata$BMI,
+    Race = metadata$Race,
+    Sex = metadata$Sex,
+    SmokingStatus = metadata$SmokingStatus
+  )
+
+# View the PCoA dataframe
+head(pcoa_df)
+
+```
+
+
+
+```{r}
+
+# Update the group labels (legend)
+pcoa_df <- pcoa_df %>%
+  mutate(Group = recode(Group, 
+                        "Better" = "Younger", 
+                        "Worse" = "Older"))
+
+# Calculate group centroids
+group_centroids <- pcoa_df %>%
+  group_by(Group) %>%
+  summarize(PC1 = mean(PC1), PC2 = mean(PC2))
+
+# Plot PCoA with centroids and 95% confidence ellipses
+ggplot(pcoa_df, aes(x = PC1, y = PC2, color = Group)) +
+  geom_point(size = 3, alpha = 0.8) +  # Plot points
+  stat_ellipse(aes(fill = Group), geom = "polygon", alpha = 0.2, level = 0.95) +  # 95% confidence ellipses
+  geom_point(data = group_centroids, aes(x = PC1, y = PC2, color = Group), 
+             size = 5, shape = 6, stroke = 2) +  # Add group centroids
+  labs(
+    #title = "PCoA of Bray-Curtis Dissimilarity",
+    #subtitle = paste0("[PERMANOVA] F-value: ", signif(permanova_result$aov.tab$F.Model, 3), 
+    #                  "; R-squared: ", signif(permanova_result$aov.tab$R2[1], 3), 
+    #                  "; p-value: ", signif(permanova_result$aov.tab$`Pr(>F)`[1], 3)),
+    x = paste0("PCoA 1 [", round(variance_explained[1], 1), "%]"),
+    y = paste0("PCoA 2 [", round(variance_explained[2], 1), "%]")
+  ) +
+  scale_color_manual(values = c("Younger" = "darkseagreen", "Older" = "darksalmon")) +  # Custom group colors
+  scale_fill_manual(values = c("Younger" = "darkseagreen", "Older" = "darksalmon")) +   # Custom ellipse colors
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    legend.title = element_blank(),
+    legend.position = "right"
+  )
+
+```
+
+
+
+
+
+```{r}
+# Ensure 'Group' is a factor
+metadata$Group <- as.factor(metadata$Group)
+
+# Perform PERMANOVA with Group as the predictor
+set.seed(123)  # For reproducibility
+permanova_group <- adonis2(bray_curtis ~ Group, data = metadata, permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_group)
+
+```
+
+
+
+```{r}
+# Set a random seed for reproducibility
+set.seed(123)
+
+# Perform PERMANOVA controlling for Age, Sex, Race, BMI, and Smoking
+permanova_control <- adonis2(bray_curtis ~ Group + Age + Sex + Race + BMI + Smoking, 
+                            data = metadata_clean, 
+                            by = "margin",
+                            permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_control)
+
+```
+
+```{r}
+# Set a random seed for reproducibility
+set.seed(123)
+
+# Perform PERMANOVA with Epigenetic_deviation as the predictor
+permanova_epigenetic <- adonis2(bray_curtis ~ Epigenetic_deviation, 
+                               data = metadata_clean, 
+                               permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_epigenetic)
+
+```
+
+
+
+
+```{r}
+#now repeat all of it with TSS scaled data
+
+# Total Sum Scaling normalization
+asv_df_tss <- asv_df / rowSums(asv_df)
+
+# Compute Bray-Curtis dissimilarity
+bray_curtis <- vegdist(asv_df_tss, method = "bray")
+
+
+# Perform PCoA
+pcoa_result <- cmdscale(bray_curtis, eig = TRUE, k = 2)  # k=2 for two principal coordinates
+
+# Extract coordinates into a dataframe
+pcoa_df <- as.data.frame(pcoa_result$points)
+colnames(pcoa_df) <- c("PC1", "PC2")
+
+# Calculate percentage of variance explained by each principal coordinate
+variance_explained <- round((pcoa_result$eig / sum(pcoa_result$eig)) * 100, 2)
+
+# Add metadata to the PCoA dataframe
+pcoa_df <- pcoa_df %>%
+  mutate(
+    Group = metadata$Group,
+    Epigenetic_deviation = metadata$Epigenetic_deviation,
+    Age = metadata$Age,
+    BMI = metadata$BMI,
+    Race = metadata$Race,
+    Sex = metadata$Sex,
+    SmokingStatus = metadata$Smoking
+  )
+
+# Update the group labels (legend)
+pcoa_df <- pcoa_df %>%
+  mutate(Group = recode(Group, 
+                        "Better" = "Younger", 
+                        "Worse" = "Older"))
+
+# Calculate group centroids
+group_centroids <- pcoa_df %>%
+  group_by(Group) %>%
+  summarize(PC1 = mean(PC1), PC2 = mean(PC2))
+
+# Plot PCoA with centroids and 95% confidence ellipses
+ggplot(pcoa_df, aes(x = PC1, y = PC2, color = Group)) +
+  geom_point(size = 3, alpha = 0.8) +  # Plot points
+  stat_ellipse(aes(fill = Group), geom = "polygon", alpha = 0.2, level = 0.95) +  # 95% confidence ellipses
+  geom_point(data = group_centroids, aes(x = PC1, y = PC2, color = Group), 
+             size = 5, shape = 6, stroke = 2) +  # Add group centroids
+  labs(
+    x = paste0("PCoA 1 [", round(variance_explained[1], 1), "%]"),
+    y = paste0("PCoA 2 [", round(variance_explained[2], 1), "%]")
+  ) +
+  scale_color_manual(values = c("Younger" = "darkseagreen", "Older" = "darksalmon")) +  # Custom group colors
+  scale_fill_manual(values = c("Younger" = "darkseagreen", "Older" = "darksalmon")) +   # Custom ellipse colors
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    legend.title = element_blank(),
+    legend.position = "right"
+  )
+
+
+
+
+
+```
+
+
+```{r}
+write.csv(pcoa_df, "pcoa_bc_scores.csv")
+write.csv(variance_explained, "pcoa_bc_explained_variance.csv")
+```
+
+
+
+
+```{r}
+simper_results <- simper(asv_df_tss, metadata_clean$Group, permutations = 999)
+
+```
+
+```{r}
+summary(simper_results)
+```
+
+
+```{r}
+save(simper_results, file = "simper_results.RData")
+
+```
+
+```{r}
+load("simper_results.RData")
+```
+
+```{r}
+simper_summary <- summary(simper_results)
+simper_df <- do.call(rbind, lapply(simper_summary, as.data.frame))
+
+```
+
+
+
+```{r}
+# Add -log10(p-value) column to the dataframe
+simper_df$neg_log_p <- -log10(simper_df$p)
+
+# Plot 1: Relative abundance in Group A vs. -log10(p-value)
+plot(simper_df$ava, simper_df$neg_log_p,
+     col = ifelse(simper_df$p < 0.05, "red", "blue"),
+     pch = 16,
+     xlab = "Relative Abundance in Group A",
+     ylab = "-log10(p-value)",
+     main = "Group A: Relative Abundance vs -log10(p-value)")
+
+# Add a significance threshold line
+abline(h = -log10(0.05), col = "gray", lty = 2)
+legend("topright", legend = c("Significant", "Not Significant"),
+       col = c("red", "blue"), pch = 16)
+
+# Plot 2: Relative abundance in Group B vs. -log10(p-value)
+plot(simper_df$avb, simper_df$neg_log_p,
+     col = ifelse(simper_df$p < 0.05, "red", "blue"),
+     pch = 16,
+     xlab = "Relative Abundance in Group B",
+     ylab = "-log10(p-value)",
+     main = "Group B: Relative Abundance vs -log10(p-value)")
+
+# Add a significance threshold line
+abline(h = -log10(0.05), col = "gray", lty = 2)
+legend("topright", legend = c("Significant", "Not Significant"),
+       col = c("red", "blue"), pch = 16)
+
+```
+
+
+```{r}
+# Load required library for color scaling
+library(ggplot2)
+
+# Plot 1: Contribution (average) vs. -log10(p-value), colored by Group A abundance (ava)
+ggplot(simper_df, aes(x = average, y = neg_log_p, color = ava)) +
+  geom_point(size = 3) +
+  scale_color_gradient(low = "blue", high = "red", name = "Group A Abundance") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "gray") +
+  labs(title = "Contribution vs -log10(p-value) (Group A Abundance)",
+       x = "Contribution (average)",
+       y = "-log10(p-value)") +
+  theme_minimal()
+
+# Plot 2: Contribution (average) vs. -log10(p-value), colored by Group B abundance (avb)
+ggplot(simper_df, aes(x = average, y = neg_log_p, color = avb)) +
+  geom_point(size = 3) +
+  scale_color_gradient(low = "blue", high = "red", name = "Group B Abundance") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "gray") +
+  labs(title = "Contribution vs -log10(p-value) (Group B Abundance)",
+       x = "Contribution (average)",
+       y = "-log10(p-value)") +
+  theme_minimal()
+
+```
+
+```{r}
+write.csv(metadata, "metadata_rarefaction.csv", row.names = FALSE)
+```
+
+
+
+```{r}
+# Load necessary library for reading Excel files
+library(readxl)
+
+# Step 1: Load your original dataframe
+# Replace `your_dataframe` with the name of your original dataframe
+original_df <- simper_df  # Assuming the original data is already loaded
+
+# Step 2: Duplicate the dataframe three times
+df_species <- original_df
+df_genus <- original_df
+df_family <- original_df
+
+# Step 3: Remove "Worse_Better." prefix from the "feature" column in all three copies
+rownames(df_species) <- sub("Worse_Better\\.", "", rownames(df_species))
+rownames(df_genus) <- sub("Worse_Better\\.", "", rownames(df_genus))
+rownames(df_family) <- sub("Worse_Better\\.", "", rownames(df_family))
+rownames(simper_df) <- sub("Worse_Better\\.", "", rownames(simper_df))
+
+# Step 4: Load the Excel file
+taxonomy_df <- read_excel("../Summary/summary/6_taxonomy_community/feature_taxonomy_split.xlsx")
+
+# Step 5: Replace index in each dataframe
+# Ensure "feature ID" in taxonomy_df is aligned with "feature" in the copied dataframes
+
+# Add columns instead of setting row names
+simper_df$Species <- taxonomy_df$Species[match(rownames(df_species), taxonomy_df$`feature ID`)]
+simper_df$Genus <- taxonomy_df$Genus[match(rownames(df_genus), taxonomy_df$`feature ID`)]
+simper_df$Family <- taxonomy_df$Family[match(rownames(df_family), taxonomy_df$`feature ID`)]
+
+# Check the updated data frames
+head(df_species)
+head(df_genus)
+head(df_family)
+
+
+# Optionally, save the new dataframes as separate files
+write.csv(df_species, "df_species.csv", row.names = FALSE)
+write.csv(df_genus, "df_genus.csv", row.names = FALSE)
+write.csv(df_family, "df_family.csv", row.names = FALSE)
+
+```
+
+
+```{r}
+# Load required library
+library(ggplot2)
+
+# Add row names as a new column in simper_df for labeling
+simper_df$ASV <- rownames(simper_df)
+
+
+# Extract the top 10 taxa by contribution (average)
+top_10 <- simper_df[order(-simper_df$average), ][1:10, ]
+
+# Function to create labeled plots (label only top 10 taxa, plot all points)
+plot_labeled_taxa <- function(df, top_10, color_var, label_var, title_prefix) {
+  ggplot(df, aes(x = average, y = neg_log_p, color = !!sym(color_var))) +
+    geom_point(size = 3) +
+    scale_color_gradient(low = "blue", high = "red", name = paste0("Group ", ifelse(color_var == "ava", "A", "B"), " Abundance")) +
+    geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "gray") +
+    geom_text(data = top_10, aes(label = !!sym(label_var)), nudge_y = 0.2, check_overlap = TRUE, size = 3) +
+    labs(title = paste0(title_prefix, " (", label_var, " Labels)"),
+         x = "Contribution (average)",
+         y = "-log10(p-value)") +
+    theme_minimal()
+}
+
+# Plot 1 and 2: Label top 10 by ASV names (rownames)
+plot1 <- plot_labeled_taxa(simper_df, top_10, "ava", "ASV", "Contribution vs -log10(p-value)")
+plot2 <- plot_labeled_taxa(simper_df, top_10, "avb", "ASV", "Contribution vs -log10(p-value)")
+
+# Plot 3 and 4: Label top 10 by Species
+plot3 <- plot_labeled_taxa(simper_df, top_10, "ava", "Species", "Contribution vs -log10(p-value)")
+plot4 <- plot_labeled_taxa(simper_df, top_10, "avb", "Species", "Contribution vs -log10(p-value)")
+
+# Plot 5 and 6: Label top 10 by Genus
+plot5 <- plot_labeled_taxa(simper_df, top_10, "ava", "Genus", "Contribution vs -log10(p-value)")
+plot6 <- plot_labeled_taxa(simper_df, top_10, "avb", "Genus", "Contribution vs -log10(p-value)")
+
+# Plot 7 and 8: Label top 10 by Family
+plot7 <- plot_labeled_taxa(simper_df, top_10, "ava", "Family", "Contribution vs -log10(p-value)")
+plot8 <- plot_labeled_taxa(simper_df, top_10, "avb", "Family", "Contribution vs -log10(p-value)")
+
+# Display plots
+print(plot1)
+print(plot2)
+print(plot3)
+print(plot4)
+print(plot5)
+print(plot6)
+print(plot7)
+print(plot8)
+
+
+
+
+```
+
+
+```{r}
+# Load required libraries
+library(ggplot2)
+library(ggrepel)  # Added for improved label placement
+
+# Define plot parameters
+FIG_WIDTH <- 10            # Width of the figure in inches
+FIG_HEIGHT <- 8            # Height of the figure in inches
+DPI <- 600                 # Resolution for saving the figure
+FONT_SIZE <- 22            # Base font size for text
+LABEL_SIZE <- 24           # Font size for axis labels
+TITLE_SIZE <- 20           # Font size for titles
+TICK_SIZE <- 20            # Font size for tick labels
+LEGEND_SIZE <- 18          # Font size for legend text
+EDGE_COLOR <- 'k'          # Edge color for scatter points
+COLOR_LOW <- "blue"        # Low end of the color gradient
+COLOR_HIGH <- "red"        # High end of the color gradient
+ALPHA_SCATTER <- 0.6       # Opacity for scatter points
+
+
+
+# Calculate mean abundance
+simper_df$mean_abundance <- (simper_df$ava + simper_df$avb) / 2
+
+# Extract the top 10 taxa by mean abundance
+top_10_mean <- simper_df[order(-simper_df$mean_abundance), ][1:6, ]
+
+# Create a 'nudge_y' column with default value 0
+top_10_mean$nudge_y <- 0
+
+# Assign specific nudges to the species that need adjustment
+top_10_mean$nudge_y[top_10_mean$Species == "s__uncultured_Haemophilus_sp."] <- 0.5
+
+# Create the publication-quality plot with improved label placement
+mean_abundance_plot <- ggplot(simper_df, aes(x = average, y = neg_log_p)) +
+  geom_point(aes(color = mean_abundance), 
+             size = 3, 
+             alpha = ALPHA_SCATTER, 
+             stroke = 0.5, 
+             shape = 16) +  # Using filled circles with edge color
+  scale_color_gradient(low = COLOR_LOW, high = COLOR_HIGH, name = "Mean Abundance ") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "gray") +
+  geom_text_repel(
+    data = top_10_mean, 
+    aes(label = Species), 
+    nudge_y = top_10_mean$nudge_y,  # Apply manual nudges
+    size = 6, 
+    fontface = "plain",
+    box.padding = 1.2,      # Space around the label box
+    point.padding = 0.5,    # Space around the point
+    segment.color = 'grey50',# Color of the leader lines
+    segment.size = 0.75,    # Thickness of the leader lines
+    max.overlaps = Inf      # Allow all labels to be drawn
+  )+
+  labs(
+    x = "Contribution (average)",
+    y = "-log10(p-value)"
+  ) +
+  theme_minimal(base_size = FONT_SIZE) +
+  theme(
+    #plot.title = element_text(size = TITLE_SIZE, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = LABEL_SIZE),
+    axis.text = element_text(size = TICK_SIZE),
+    legend.title = element_text(size = LEGEND_SIZE),
+    legend.text = element_text(size = LEGEND_SIZE),
+    legend.key.size = unit(1.5, "lines"),
+    legend.position = "right"
+    #plot.margin = margin(10, 10, 10, 10)
+  )
+
+# Display the plot
+print(mean_abundance_plot)
+
+# Save the plot with specified dimensions and resolution
+ggsave("mean_abundance_plot.png", 
+       plot = mean_abundance_plot, 
+       width = FIG_WIDTH, 
+       height = FIG_HEIGHT, 
+       dpi = DPI, 
+       units = "in")
+
+
+
+```
+
+
+
+
+```{r}
+# Ensure 'Group' is a factor
+metadata$Group <- as.factor(metadata$Group)
+
+# Perform PERMANOVA with Group as the predictor
+set.seed(123)  # For reproducibility
+permanova_group <- adonis2(bray_curtis ~ Group, data = metadata, permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_group)
+
+```
+
+
+```{r}
+# Set a random seed for reproducibility
+set.seed(123)
+
+# Perform PERMANOVA controlling for Age, Sex, Race, BMI, and Smoking
+permanova_control <- adonis2(bray_curtis ~ Group + Age + Sex + Race + BMI + Smoking, 
+                             data = metadata, 
+                             by = "margin",
+                             permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_control)
+
+```
+
+```{r}
+# Set a random seed for reproducibility
+set.seed(123)
+
+# Perform PERMANOVA with Epigenetic_deviation as the predictor
+permanova_epigenetic <- adonis2(bray_curtis ~ Epigenetic_deviation, 
+                                data = metadata, 
+                                permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_epigenetic)
+
+```
+
+
+```{r}
+#now try Rarefaction using 1000-fold subsampling at 20651 depth (same as alphas)
+
+# Desired rarefaction depth
+rarefaction_depth <- 20651
+# Calculate the total reads per sample
+sample_reads <- rowSums(asv_df)
+
+# Identify samples with reads greater than or equal to the rarefaction depth
+sufficient_reads <- sample_reads >= rarefaction_depth
+
+
+# Number of samples before exclusion
+num_samples_before <- nrow(asv_df)
+
+# Number of samples to be excluded
+num_excluded_samples <- sum(!sufficient_reads)
+
+cat("Number of samples before exclusion:", num_samples_before, "\n")
+cat("Number of samples to be excluded due to insufficient reads:", num_excluded_samples, "\n")
+
+
+```
+
+```{r}
+# Subset the ASV dataframe to include only samples with sufficient reads
+asv_df <- asv_df[sufficient_reads, ]
+
+# Subset the metadata to match the filtered ASV dataframe
+metadata <- metadata[sufficient_reads, ]
+
+```
+
+
+```{r}
+write.csv(asv_df, "asv_rarefaction.csv", row.names = FALSE)
+```
+
+
+
+```{r}
+# Check if the sample names match
+all(rownames(asv_df) == rownames(metadata))
+# Print the dimensions of the ASV dataframe
+dim(asv_df)
+
+
+```
+
+```{r}
+# Number of iterations
+n_iterations <- 1000
+
+# Initialize a list to store distance matrices
+distance_matrices <- vector("list", n_iterations)
+
+# Perform rarefaction and calculate Bray-Curtis distances sequentially
+for (i in 1:n_iterations) {
+  # Perform rarefaction
+  rarefied_asv <- rrarefy(asv_df, sample = rarefaction_depth)
+  
+  # Compute Bray-Curtis dissimilarity
+  bray_curtis <- vegdist(rarefied_asv, method = "bray")
+  
+  # Convert to matrix and store in the list
+  distance_matrices[[i]] <- as.matrix(bray_curtis)
+  
+  # Optional: Print progress every 100 iterations
+  if (i %% 100 == 0) {
+    cat("Completed iteration:", i, "out of", n_iterations, "\n")
+  }
+}
+
+```
+
+```{r}
+# Sum the distance matrices element-wise
+sum_distance_matrix <- Reduce("+", distance_matrices)
+
+# Calculate the average distance matrix
+average_distance_matrix <- sum_distance_matrix / n_iterations
+
+# Convert the average distance matrix back to a 'dist' object
+average_bray_curtis <- as.dist(average_distance_matrix)
+
+# Define the output file path
+output_file <- "average_bray_curtis.csv"
+
+# Save the average distance matrix as a CSV file
+write.csv(as.matrix(average_distance_matrix), file = output_file, row.names = TRUE)
+
+```
+
+
+```{r}
+# Perform PCoA
+pcoa_result <- cmdscale(average_bray_curtis, eig = TRUE, k = 2)  # k=2 for two principal coordinates
+
+# Extract coordinates into a dataframe
+pcoa_df <- as.data.frame(pcoa_result$points)
+colnames(pcoa_df) <- c("PC1", "PC2")
+
+# Calculate percentage of variance explained by each principal coordinate
+variance_explained <- round((pcoa_result$eig / sum(pcoa_result$eig[pcoa_result$eig > 0])) * 100, 2)
+
+# Add metadata to the PCoA dataframe
+pcoa_df <- pcoa_df %>%
+  mutate(
+    SampleID = rownames(pcoa_df),
+    Group = metadata$Group,
+    Epigenetic_deviation = metadata$Epigenetic_deviation,
+    Age = metadata$Age,
+    BMI = metadata$BMI,
+    Race = metadata$Race,
+    Sex = metadata$Sex,
+    Smoking = metadata$Smoking
+  )
+
+```
+
+```{r}
+# Update the group labels
+pcoa_df <- pcoa_df %>%
+  mutate(Group = recode(Group, "Better" = "Younger", "Worse" = "Older"))
+
+# Calculate group centroids
+group_centroids <- pcoa_df %>%
+  group_by(Group) %>%
+  summarize(PC1 = mean(PC1), PC2 = mean(PC2))
+
+# Plot PCoA with centroids and 95% confidence ellipses
+ggplot(pcoa_df, aes(x = PC1, y = PC2, color = Group)) +
+  geom_point(size = 3, alpha = 0.8) +  # Plot points
+  stat_ellipse(aes(fill = Group), geom = "polygon", alpha = 0.2, level = 0.95) +  # 95% confidence ellipses
+  geom_point(data = group_centroids, aes(x = PC1, y = PC2, color = Group),
+             size = 5, shape = 6, stroke = 2) +  # Add group centroids
+  labs(
+    x = paste0("PCoA 1 [", variance_explained[1], "%]"),
+    y = paste0("PCoA 2 [", variance_explained[2], "%]")
+  ) +
+  scale_color_manual(values = c("Younger" = "darkseagreen", "Older" = "darksalmon")) +  # Custom group colors
+  scale_fill_manual(values = c("Younger" = "darkseagreen", "Older" = "darksalmon")) +   # Custom ellipse colors
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    legend.title = element_blank(),
+    legend.position = "right"
+  )
+
+```
+
+
+```{r}
+# Ensure 'Group' is a factor
+metadata$Group <- as.factor(metadata$Group)
+
+# Perform PERMANOVA with Group as the predictor
+set.seed(123)  # For reproducibility
+permanova_group <- adonis2(average_bray_curtis ~ Group, data = metadata, permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_group)
+
+```
+
+```{r}
+# Set a random seed for reproducibility
+set.seed(123)
+
+# Perform PERMANOVA controlling for Age, Sex, Race, BMI, and SmokingStatus
+permanova_control <- adonis2(average_bray_curtis ~ Group + Age + Sex + Race + BMI + Smoking, 
+                             data = metadata, 
+                             by = "margin",
+                             permutations = 9999)
+
+# View PERMANOVA results
+print(permanova_control)
+
+```
+
