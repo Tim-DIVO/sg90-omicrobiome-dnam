@@ -1,0 +1,1 @@
+{"fs_method": "SFS-CV", "model_type": "StochasticXGBoost", "outer_fold": 1, "accuracy": 0.5873015873015873, "precision": 0.5873015873015873, "recall": 0.5873015873015873, "f1_score": 0.5873015873015873, "roc_auc": 0.5967741935483871, "log_loss": 0.6625778339211903}
