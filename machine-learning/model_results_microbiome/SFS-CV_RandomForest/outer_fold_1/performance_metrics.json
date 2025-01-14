@@ -1,0 +1,1 @@
+{"fs_method": "SFS-CV", "model_type": "RandomForest", "outer_fold": 1, "accuracy": 0.6349206349206349, "precision": 0.6393298059964727, "recall": 0.6349206349206349, "f1_score": 0.6330735346672609, "roc_auc": 0.6451612903225806, "log_loss": 0.668939046707091}
