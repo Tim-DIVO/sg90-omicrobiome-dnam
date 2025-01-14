@@ -1,0 +1,15 @@
+name: SG90
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - pandas
+  - scikit-learn
+  - joblib
+  - xgboost
+  - shap
+  - pip
+  - pip:
+    - optuna

@@ -1,0 +1,1 @@
+{"model_type": "Random Model", "outer_fold": 1, "accuracy": 0.49206349206349204, "precision": 0.49206349206349204, "recall": 0.49206349206349204, "f1_score": 0.49206349206349204, "roc_auc": 0.5, "log_loss": null}
