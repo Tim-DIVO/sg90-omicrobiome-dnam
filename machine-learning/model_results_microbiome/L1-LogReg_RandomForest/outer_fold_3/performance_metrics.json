@@ -1,0 +1,1 @@
+{"fs_method": "L1-LogReg", "model_type": "RandomForest", "outer_fold": 3, "accuracy": 0.5483870967741935, "precision": 0.5485893416927898, "recall": 0.5483870967741935, "f1_score": 0.5479166666666666, "roc_auc": 0.599375650364204, "log_loss": 0.6757266552691903}
