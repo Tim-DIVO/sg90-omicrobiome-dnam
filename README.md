@@ -3,11 +3,12 @@ All scripts from the analysis of my MSc thesis - Salivary Signatures of Longevit
 
 Repository is organised by analysis type:
 - Data preparation (preparing, plotting, cleaning, and merging microbiome data, epigenetic data, and metadata of SG90 cohort)
-- Alpha Diversity (Shannon, Simpson, Chao1, Richness, and Pielou Evenness plus rarefaction code)
-- Beta Diversity (robust Aitchison's distance, phylogenetic robust Aitchison's distance, and Bray Curtis)
+- Time interaction tests (evaluating time interaction effects between SG90 metadata and biological data (saliva and methylation data) using 3-step pipeline)
+- Alpha diversity (Shannon, Simpson, Chao1, Richness, and Pielou Evenness plus rarefaction code)
+- Beta diversity (robust Aitchison's distance, phylogenetic robust Aitchison's distance, and Bray Curtis)
 - Conservation scores (experimental, just in case someone would like to use this data later on)
 - Differential abundance analysis (using ALDEx2)
-- Machine Learning (pipeline tuning feature selection/model type/model parameters to test various models (incl scripts to run it on HPC), get baseline comparison models, and evaluate results)
+- Machine learning (pipeline tuning feature selection/model type/model parameters to test various models (incl scripts to run it on HPC), get baseline comparison models, and evaluate results)
 - SPIEC-EASI (code for both microbiome-only networks and microbiome-epigenome networks and their interpretation)
 - Cognition model (GLM model on MMSE scores)
 
