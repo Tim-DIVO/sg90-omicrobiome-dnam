@@ -3,6 +3,7 @@ This is the data preparation needed to obtain many of the dataframes that are be
 1. Preparing ASV data and epigenetic clock data (median calculation and mAge deviation calculation)
 2. Merging SG90 metadata + microbiome + mAge data
 3. Cleaning and plotting data. Obtaining distributions for Table 1.
+4. CLR transform for i.e. machine learning model input.
 
 The numbers in filenames annotate the sequence they were used in.
 
